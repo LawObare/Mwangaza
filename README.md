@@ -5,7 +5,7 @@ Satellite-driven farm advisory system. Fetches environmental data from SpaceIoTB
 ## Structure
 
 ```
-backend/     — Go + Gin REST API (SQLite database)
+backend/     — Go + SQLite database
 frontend/    — Flutter dashboard (OpenStreetMap)
 database/    — SQL schema and seed scripts
 docs/        — Project documentation
