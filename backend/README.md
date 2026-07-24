@@ -24,6 +24,17 @@ Hackathon-friendly Go REST API for the farm advisory demo.
 - `SMS_API_KEY` - optional Africa's Talking API key
 - `SMS_USERNAME` - optional Africa's Talking username
 - `SMS_SENDER_ID` - optional sender ID
+- `AUTO_ALERTS_ENABLED` - `true` to automatically check farms and send alerts, default `false`
+- `AUTO_ALERTS_INTERVAL` - how often auto alerts run, default `15m`
+- `AUTO_ALERTS_SMS_COOLDOWN` - minimum time before another automatic SMS to the same farm, default `6h`
+
+## Live Auto Alerts
+
+When `AUTO_ALERTS_ENABLED=true`, the backend starts a background runner. On each
+interval it fetches SpaceIoTBox data for every farm, stores the generated
+recommendation batch, and sends the highest-priority medium/high alert to the
+farmer by SMS. Low-priority monitoring recommendations are stored but not sent,
+so farmers are not texted repeatedly when conditions are normal.
 
 ## Key Endpoints
 

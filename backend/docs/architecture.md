@@ -19,6 +19,16 @@ Mwangaza is a farm advisory dashboard with a Go backend and Flutter frontend.
 4. Recommendation engine analyzes data and generates advice
 5. SMS alerts are sent via Africa's Talking
 
+## Live Auto Alerts
+
+The backend can also run optional background checks when
+`AUTO_ALERTS_ENABLED=true`. The runner wakes up on `AUTO_ALERTS_INTERVAL`,
+fetches current SpaceIoTBox data for each farm, stores the generated
+recommendation batch, and sends the highest-priority medium/high alert by SMS.
+`AUTO_ALERTS_SMS_COOLDOWN` prevents repeated automatic messages to the same
+farm. Low-priority monitoring recommendations are still stored but are not sent
+as automatic SMS alerts.
+
 ## Decision Engine
 
 The recommendation service uses satellite data to generate farm-specific advice based on thresholds for soil moisture, temperature, rain probability, and NDVI.

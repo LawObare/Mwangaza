@@ -1,13 +1,18 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"mwangaza/internal/config"
 	"mwangaza/internal/database"
 	"mwangaza/internal/routes"
+	"mwangaza/internal/services/alerts"
 )
 
 func main() {
@@ -25,6 +30,10 @@ func main() {
 	if err := database.Seed(store); err != nil {
 		log.Fatalf("seed store: %v", err)
 	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	alerts.NewRunner(store, cfg, log.Default()).Start(ctx)
 
 	handler := routes.Setup(store, cfg)
 	server := &http.Server{
