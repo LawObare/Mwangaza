@@ -1,11 +1,51 @@
-// Package config (env.go) provides helper functions for reading
-// individual environment variables used across the backend.
-//
-// Functions:
-//   IsMockEnabled() bool       — returns true if USE_MOCK_DATA == "true"
-//   SpaceIoTBoxAPIKey() string — reads SPACEIOTBOX_API_KEY
-//   SpaceIoTBoxBaseURL() string — reads SPACEIOTBOX_BASE_URL
-//
-// These are used by the satellite service (client.go, service.go)
-// and the SMS service (service.go) to decide mock vs live mode.
 package config
+
+import (
+	"bufio"
+	"os"
+	"strings"
+)
+
+func loadDotEnvFiles(paths ...string) error {
+	for _, path := range paths {
+		if err := loadDotEnvFile(path); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func loadDotEnvFile(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		if strings.HasPrefix(line, "export ") {
+			line = strings.TrimSpace(strings.TrimPrefix(line, "export "))
+		}
+
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+		value = strings.Trim(value, `"'`)
+
+		if key != "" {
+			_ = os.Setenv(key, value)
+		}
+	}
+
+	return scanner.Err()
+}

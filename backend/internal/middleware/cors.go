@@ -1,9 +1,19 @@
-// Package middleware (cors.go) provides CORS configuration for the Flutter frontend.
-//
-// The Flutter dashboard may run on a different origin (e.g., web build on localhost:3000
-// or an emulator on 10.0.2.2:8080). This middleware allows all origins with standard
-// methods (GET, POST, PUT, DELETE, OPTIONS) and headers (Content-Type, Authorization).
-//
-// Registered globally in routes.Setup() via r.Use().
-// Preflight OPTIONS requests are handled with a 204 No Content response.
 package middleware
+
+import "net/http"
+
+func CORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Max-Age", "86400")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
