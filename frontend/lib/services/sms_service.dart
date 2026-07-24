@@ -1,17 +1,29 @@
-// lib/services/sms_service.dart — SMS API service.
-//
-// Endpoints:
-//   GET  /api/sms       → getSmsHistory() returns List<SmsMessage>
-//   POST /api/sms/send  → sendSms(farmId, message, phone) sends an SMS
-//
-// Responsibilities:
-//   - GET sms history from backend.
-//   - POST new SMS to send via Africa's Talking (or mock).
-//   - Deserialize JSON into models/sms.dart.
-//
-// Connects to:
-//   api_service.dart  — makes HTTP requests.
-//   models/sms.dart   — target model.
-//   screens/sms/      — displays history.
-//   widgets/ (send button in dashboard detail screens).
-class SmsService {}
+import '../models/sms.dart';
+import 'api_service.dart';
+
+class SmsService {
+  SmsService(this._api);
+
+  final ApiService _api;
+
+  Future<List<SmsMessage>> listSms() async {
+    final data = await _api.get('/sms');
+    return (data as List? ?? const [])
+        .whereType<Map>()
+        .map((item) => SmsMessage.fromJson(Map<String, dynamic>.from(item)))
+        .toList();
+  }
+
+  Future<SmsMessage> send({
+    required int farmId,
+    String message = '',
+    String phoneNumber = '',
+  }) async {
+    final data = await _api.post('/sms/send', {
+      'farm_id': farmId,
+      'message': message,
+      'phone_number': phoneNumber,
+    });
+    return SmsMessage.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+}

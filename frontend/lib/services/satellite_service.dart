@@ -1,14 +1,16 @@
-// lib/services/satellite_service.dart — Satellite data API service.
-//
-// Endpoint:
-//   GET /api/satellite → getSatelliteData() returns SatelliteData
-//
-// Responsibilities:
-//   - Use ApiService to call the backend satellite endpoint.
-//   - Deserialize JSON into models/satellite.dart.
-//
-// Connects to:
-//   api_service.dart       — makes HTTP requests.
-//   models/satellite.dart  — target model.
-//   screens/dashboard/     — displays satellite data in stat cards and satellite card.
-class SatelliteService {}
+import '../models/satellite.dart';
+import 'api_service.dart';
+
+class SatelliteService {
+  SatelliteService(this._api);
+
+  final ApiService _api;
+
+  Future<SatelliteData?> latest() async {
+    final data = await _api.get('/satellite');
+    if (data is Map) {
+      return SatelliteData.fromJson(Map<String, dynamic>.from(data));
+    }
+    return null;
+  }
+}
