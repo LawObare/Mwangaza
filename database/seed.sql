@@ -1,0 +1,9 @@
+-- seed.sql — Sample data for development/demo.
+--
+-- Inserts 3 farms, 3 satellite readings, 3 recommendations, and 3 SMS logs.
+-- Used by internal/database/seed.go when tables are empty.
+--
+-- Farms:
+--   1. Green Valley Farm  (-1.2921, 36.8219) — healthy
+--   2. Sunrise Acres      (-0.3031, 36.0800) — needs attention
+--   3. Hilltop Farm       (-1.2833, 36.8167) — urgent

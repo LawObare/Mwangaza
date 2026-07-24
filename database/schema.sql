@@ -1,0 +1,11 @@
+-- schema.sql — Database schema for Mwangaza.
+--
+-- Tables:
+--   farms            — id, name, farmer, phone, latitude, longitude
+--   satellite_data   — id, farm_id (FK), soil_moisture, temperature,
+--                       rain_probability, ndvi, wind_speed, recorded_at
+--   recommendations  — id, farm_id (FK), message, priority, reason, created_at
+--   sms_logs         — id, phone, message, status, sent_at
+--
+-- These CREATE TABLE statements are executed by the Go migration
+-- (internal/database/migrate.go) on server startup.
