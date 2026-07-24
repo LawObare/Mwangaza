@@ -1,8 +1,14 @@
-// Package handlers (health_handler.go) provides a simple health check.
-//
-// Endpoint:
-//   GET /api/health — returns { "status": "ok" }
-//
-// Used by the Flutter app to verify backend reachability.
-// Also useful for load balancers and deployment health probes.
 package handlers
+
+import "github.com/gin-gonic/gin"
+
+// HealthCheck  godoc
+// @Summary     Health check
+// @Description Returns server status
+// @Tags        system
+// @Produce     json
+// @Success     200  {object}  map[string]string
+// @Router      /health [get]
+func HealthCheck(c *gin.Context) {
+	c.JSON(200, map[string]string{"status": "ok"})
+}

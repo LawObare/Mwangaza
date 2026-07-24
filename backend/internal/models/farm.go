@@ -1,14 +1,14 @@
-// Package models (farm.go) defines the Farm struct representing a row
-// in the farms SQLite table.
-//
-// Fields:
-//   ID        int     — primary key, autoincrement
-//   Name      string  — farm name
-//   Farmer    string  — farmer's full name
-//   Phone     string  — farmer's phone number (+254 format)
-//   Latitude  float64 — GPS latitude
-//   Longitude float64 — GPS longitude
-//
-// Used by handlers to serialize JSON responses and by database queries
-// to scan rows. JSON tags should match the Flutter model's expected keys.
 package models
+
+// Farm represents a row in the farms table.
+type Farm struct {
+	ID           int     `json:"id"`
+	Name         string  `json:"name"`
+	Farmer       string  `json:"farmer"`
+	Phone        string  `json:"phone"`
+	Latitude     float64 `json:"latitude"`
+	Longitude    float64 `json:"longitude"`
+	SoilMoisture float64 `json:"soil_moisture,omitempty"`
+	Temperature  float64 `json:"temperature,omitempty"`
+	LastSMSSent  string  `json:"last_sms_sent,omitempty"`
+}

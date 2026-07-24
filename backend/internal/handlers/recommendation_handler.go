@@ -1,10 +1,20 @@
-// Package handlers (recommendation_handler.go) serves recommendation endpoints.
-//
-// Endpoints:
-//   GET /api/recommendation          — returns all recommendations
-//   GET /api/recommendation?farm_id= — filters by farm_id
-//
-// Queries the recommendations table. Each row includes a message,
-// priority level (low/medium/high), reason, and timestamp.
-// The recommendation engine (services/recommendation) populates this table.
 package handlers
+
+import (
+	"github.com/gin-gonic/gin"
+	"mwangaza/internal/models"
+)
+
+// GetRecommendations  godoc
+// @Summary           Get recommendations
+// @Description       Returns all recommendations, optionally filtered by farm_id
+// @Tags              recommendations
+// @Produce           json
+// @Param             farm_id  query     int  false  "Filter by farm ID"
+// @Security          BearerAuth
+// @Success           200  {object}  []models.Recommendation
+// @Failure           401  {object}  map[string]interface{}
+// @Router            /recommendation [get]
+func GetRecommendations(c *gin.Context) {
+	c.JSON(200, []models.Recommendation{})
+}

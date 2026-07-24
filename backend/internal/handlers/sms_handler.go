@@ -1,14 +1,41 @@
-// Package handlers (sms_handler.go) serves SMS-related endpoints.
-//
-// Endpoints:
-//   GET  /api/sms       — returns sms_logs table (history)
-//   POST /api/sms/send  — accepts { farm_id, message, phone_number },
-//                          validates, sends via SMS service, logs to sms_logs
-//
-// The POST handler should:
-//   1. Validate phone number (+254 format, 12 digits)
-//   2. Validate farm_id exists in farms table
-//   3. Call sms service (mock or Africa's Talking)
-//   4. Insert result into sms_logs table
-//   5. Return success/failure
 package handlers
+
+import (
+	"github.com/gin-gonic/gin"
+	"mwangaza/internal/models"
+)
+
+// GetSMSHistory  godoc
+// @Summary      Get SMS history
+// @Description  Returns all sent SMS messages
+// @Tags         sms
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  []models.SmsLog
+// @Failure      401  {object}  map[string]interface{}
+// @Router       /sms [get]
+func GetSMSHistory(c *gin.Context) {
+	c.JSON(200, []models.SmsLog{})
+}
+
+type smsRequest struct {
+	FarmID      int    `json:"farm_id"`
+	Message     string `json:"message"`
+	PhoneNumber string `json:"phone_number"`
+}
+
+// SendSMS      godoc
+// @Summary     Send an SMS
+// @Description Sends an advisory SMS to a farmer's phone
+// @Tags        sms
+// @Accept      json
+// @Produce     json
+// @Param       body  body      smsRequest  true  "SMS payload"
+// @Security    BearerAuth
+// @Success     201   {object}  map[string]interface{}
+// @Failure     400   {object}  map[string]interface{}
+// @Failure     401   {object}  map[string]interface{}
+// @Router      /sms/send [post]
+func SendSMS(c *gin.Context) {
+	c.JSON(201, map[string]interface{}{})
+}

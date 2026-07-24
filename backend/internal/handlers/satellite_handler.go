@@ -1,12 +1,20 @@
-// Package handlers (satellite_handler.go) serves the satellite data endpoint.
-//
-// Endpoint:
-//   GET /api/satellite — fetches latest satellite data via satellite.FetchSatelliteData()
-//
-// This handler calls the satellite service package (not the database directly).
-// If USE_MOCK_DATA=true, the service returns mock.go data.
-// Otherwise it hits the SpaceIoTBox API via client.go and parses via parser.go.
-//
-// Response shape:
-//   { "success": true, "data": { "soil_moisture": ..., "temperature": ..., ... } }
 package handlers
+
+import (
+	"github.com/gin-gonic/gin"
+	"mwangaza/internal/models"
+)
+
+// GetSatelliteData  godoc
+// @Summary         Get satellite data
+// @Description     Fetches latest environmental data from SpaceIoTBox (or mock)
+// @Tags            satellite
+// @Produce         json
+// @Security        BearerAuth
+// @Success         200  {object}  models.SatelliteData
+// @Failure         401  {object}  map[string]interface{}
+// @Failure         500  {object}  map[string]interface{}
+// @Router          /satellite [get]
+func GetSatelliteData(c *gin.Context) {
+	c.JSON(200, models.SatelliteData{})
+}

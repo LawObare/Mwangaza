@@ -1,18 +1,35 @@
-// Package routes registers all API endpoints on a Gin router.
-//
-// It takes the *sql.DB as a dependency, creates handler structs with it,
-// and wires up middleware (CORS) and all route groups.
-//
-// Routes (under /api prefix):
-//   GET    /health          — health_handler.HealthCheck
-//   GET    /farms           — farm_handler.GetFarms
-//   GET    /farms/:id       — farm_handler.GetFarm
-//   GET    /satellite       — satellite_handler.GetSatelliteData
-//   GET    /recommendation  — recommendation_handler.GetRecommendations
-//   GET    /sms             — sms_handler.GetSMSHistory
-//   POST   /sms/send        — sms_handler.SendSMS
-//
-// Called from main.go:
-//   r := routes.Setup(db)
-//   r.Run(":8080")
 package routes
+
+import (
+	"github.com/gin-gonic/gin"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	swaggerFiles "github.com/swaggo/files"
+
+	"mwangaza/internal/handlers"
+	"mwangaza/internal/middleware"
+)
+
+func Setup(db interface{}) *gin.Engine {
+	r := gin.New()
+	r.Use(middleware.CORS())
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.GET("/api/health", handlers.HealthCheck)
+
+	api := r.Group("/api")
+	api.POST("/auth/register", handlers.Register)
+	api.POST("/auth/login", handlers.Login)
+
+	protected := api.Group("")
+	protected.Use(middleware.Auth())
+	{
+		protected.GET("/farms", handlers.ListFarms)
+		protected.GET("/farms/:id", handlers.GetFarm)
+		protected.GET("/satellite", handlers.GetSatelliteData)
+		protected.GET("/recommendation", handlers.GetRecommendations)
+		protected.GET("/sms", handlers.GetSMSHistory)
+		protected.POST("/sms/send", handlers.SendSMS)
+	}
+
+	return r
+}

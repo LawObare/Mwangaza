@@ -1,16 +1,13 @@
-// Package models (satellite.go) defines the SatelliteData struct.
-//
-// This is the canonical representation of environmental data returned
-// by the satellite service. It is what the Flutter dashboard displays.
-//
-// Fields:
-//   SoilMoisture  float64 — percentage (0-100)
-//   Temperature   float64 — Celsius
-//   RainProb      float64 — percentage (0-100)
-//   NDVI          float64 — Normalized Difference Vegetation Index (-1 to 1)
-//   WindSpeed     float64 — meters per second
-//   Timestamp     time.Time — when the data was recorded
-//
-// Populated by services/satellite/parser.go from SpaceIoTBox JSON
-// or directly by services/satellite/mock.go.
 package models
+
+import "time"
+
+// SatelliteData represents environmental data from SpaceIoTBox.
+type SatelliteData struct {
+	SoilMoisture float64   `json:"soil_moisture"`
+	Temperature  float64   `json:"temperature"`
+	RainProb     float64   `json:"rain_probability"`
+	NDVI         float64   `json:"ndvi"`
+	WindSpeed    float64   `json:"wind_speed"`
+	Timestamp    time.Time `json:"timestamp"`
+}
