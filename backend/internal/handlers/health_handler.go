@@ -1,8 +1,27 @@
-// Package handlers (health_handler.go) provides a simple health check.
-//
-// Endpoint:
-//   GET /api/health — returns { "status": "ok" }
-//
-// Used by the Flutter app to verify backend reachability.
-// Also useful for load balancers and deployment health probes.
 package handlers
+
+import (
+	"net/http"
+	"time"
+
+	"mwangaza/internal/config"
+	"mwangaza/internal/utils"
+)
+
+type HealthHandler struct {
+	Config config.Config
+}
+
+func NewHealthHandler(cfg config.Config) *HealthHandler {
+	return &HealthHandler{Config: cfg}
+}
+
+func (h *HealthHandler) Get(w http.ResponseWriter, r *http.Request) {
+	utils.Success(w, map[string]any{
+		"status":            "ok",
+		"service":           "mwangaza",
+		"mock_mode":         h.Config.UseMockData,
+		"default_language":  h.Config.DefaultLanguage,
+		"timestamp":         time.Now().UTC().Format(time.RFC3339),
+	})
+}

@@ -1,10 +1,77 @@
-// Package handlers (recommendation_handler.go) serves recommendation endpoints.
-//
-// Endpoints:
-//   GET /api/recommendation          — returns all recommendations
-//   GET /api/recommendation?farm_id= — filters by farm_id
-//
-// Queries the recommendations table. Each row includes a message,
-// priority level (low/medium/high), reason, and timestamp.
-// The recommendation engine (services/recommendation) populates this table.
 package handlers
+
+import (
+	"net/http"
+
+	"mwangaza/internal/config"
+	"mwangaza/internal/database"
+	"mwangaza/internal/models"
+	"mwangaza/internal/services/recommendation"
+	"mwangaza/internal/utils"
+)
+
+type RecommendationHandler struct {
+	Store  *database.Store
+	Config config.Config
+}
+
+func NewRecommendationHandler(store *database.Store, cfg config.Config) *RecommendationHandler {
+	return &RecommendationHandler{Store: store, Config: cfg}
+}
+
+func (h *RecommendationHandler) List(w http.ResponseWriter, r *http.Request) {
+	farmID, ok, err := parseQueryFarmID(r.URL.Query().Get("farm_id"))
+	if err != nil {
+		utils.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var filter *int
+	if ok {
+		filter = &farmID
+	}
+
+	utils.Success(w, h.Store.ListRecommendations(filter))
+}
+
+func (h *RecommendationHandler) Generate(w http.ResponseWriter, r *http.Request) {
+	farmID, ok, err := parseQueryFarmID(r.URL.Query().Get("farm_id"))
+	if err != nil {
+		utils.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if ok {
+		farm, found := h.Store.GetFarm(farmID)
+		if !found {
+			utils.Error(w, http.StatusNotFound, "farm not found")
+			return
+		}
+
+		rec, _, err := recommendation.GenerateForFarm(h.Store, h.Config, farm)
+		if err != nil {
+			utils.Error(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		utils.Created(w, rec)
+		return
+	}
+
+	farms := h.Store.ListFarms()
+	if len(farms) == 0 {
+		utils.Error(w, http.StatusNotFound, "no farms available")
+		return
+	}
+
+	result := make([]models.Recommendation, 0, len(farms))
+	for _, farm := range farms {
+		rec, _, err := recommendation.GenerateForFarm(h.Store, h.Config, farm)
+		if err != nil {
+			continue
+		}
+		result = append(result, rec)
+	}
+
+	utils.Created(w, result)
+}

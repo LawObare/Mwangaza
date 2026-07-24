@@ -1,13 +1,43 @@
-// Package main is the application entry point.
-// It loads configuration from env, initializes the SQLite database,
-// runs migrations, optionally seeds data, and starts the Gin HTTP server.
-//
-// Flow:
-//   1. config.Load() → reads PORT, DATABASE_PATH, SPACEIOTBOX_* env vars
-//   2. database.Connect(cfg.DatabasePath) → opens SQLite via mattn/go-sqlite3
-//   3. database.Migrate() → creates farms, satellite_data, recommendations, sms_logs tables
-//   4. routes.Setup(db) → registers all API handlers on a Gin engine
-//   5. r.Run(":" + PORT) → starts listening
-//
-// The db *sql.DB instance is passed through to handlers/services via dependency injection.
 package main
+
+import (
+	"log"
+	"net/http"
+	"time"
+
+	"mwangaza/internal/config"
+	"mwangaza/internal/database"
+	"mwangaza/internal/routes"
+)
+
+func main() {
+	cfg := config.Load()
+
+	store, err := database.Open(cfg.DatabasePath)
+	if err != nil {
+		log.Fatalf("open store: %v", err)
+	}
+
+	if err := database.Migrate(store); err != nil {
+		log.Fatalf("migrate store: %v", err)
+	}
+
+	if err := database.Seed(store); err != nil {
+		log.Fatalf("seed store: %v", err)
+	}
+
+	handler := routes.Setup(store, cfg)
+	server := &http.Server{
+		Addr:              ":" + cfg.Port,
+		Handler:           handler,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	log.Printf("Mwangaza backend listening on http://localhost:%s", cfg.Port)
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("start server: %v", err)
+	}
+}

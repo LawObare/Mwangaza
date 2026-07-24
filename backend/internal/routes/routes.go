@@ -1,18 +1,32 @@
-// Package routes registers all API endpoints on a Gin router.
-//
-// It takes the *sql.DB as a dependency, creates handler structs with it,
-// and wires up middleware (CORS) and all route groups.
-//
-// Routes (under /api prefix):
-//   GET    /health          — health_handler.HealthCheck
-//   GET    /farms           — farm_handler.GetFarms
-//   GET    /farms/:id       — farm_handler.GetFarm
-//   GET    /satellite       — satellite_handler.GetSatelliteData
-//   GET    /recommendation  — recommendation_handler.GetRecommendations
-//   GET    /sms             — sms_handler.GetSMSHistory
-//   POST   /sms/send        — sms_handler.SendSMS
-//
-// Called from main.go:
-//   r := routes.Setup(db)
-//   r.Run(":8080")
 package routes
+
+import (
+	"net/http"
+
+	"mwangaza/internal/config"
+	"mwangaza/internal/database"
+	"mwangaza/internal/handlers"
+	"mwangaza/internal/middleware"
+)
+
+func Setup(store *database.Store, cfg config.Config) http.Handler {
+	mux := http.NewServeMux()
+
+	healthHandler := handlers.NewHealthHandler(cfg)
+	farmHandler := handlers.NewFarmHandler(store, cfg)
+	satelliteHandler := handlers.NewSatelliteHandler(store, cfg)
+	recommendationHandler := handlers.NewRecommendationHandler(store, cfg)
+	smsHandler := handlers.NewSMSHandler(store, cfg)
+
+	mux.HandleFunc("GET /api/health", healthHandler.Get)
+	mux.HandleFunc("GET /api/farms", farmHandler.List)
+	mux.HandleFunc("POST /api/farms", farmHandler.Create)
+	mux.HandleFunc("GET /api/farms/{id}", farmHandler.Get)
+	mux.HandleFunc("GET /api/satellite", satelliteHandler.Get)
+	mux.HandleFunc("GET /api/recommendation", recommendationHandler.List)
+	mux.HandleFunc("POST /api/recommendation", recommendationHandler.Generate)
+	mux.HandleFunc("GET /api/sms", smsHandler.List)
+	mux.HandleFunc("POST /api/sms/send", smsHandler.Send)
+
+	return middleware.CORS(mux)
+}
