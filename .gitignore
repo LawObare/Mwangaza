@@ -1,0 +1,18 @@
+# .gitignore — Ignore patterns for Go backend and Flutter frontend.
+#
+# Go:
+#   backend/go.sum          — auto-generated, committed in practice
+#   backend/data/lakenet.db — SQLite database (generated at runtime)
+#   *.exe, *.exe~           — compiled binaries
+#
+# Flutter:
+#   frontend/build/         — Flutter build output
+#   frontend/.dart_tool/    — Dart tool cache
+#   frontend/.packages      — package config
+#   frontend/.flutter-plugins*
+#
+# IDE:
+#   .vscode/                — VS Code settings (user-specific)
+#   .idea/                  — JetBrains IDE settings
+#   *.swp, *.swo            — Vim swap files
+#   .DS_Store               — macOS metadata
