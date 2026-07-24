@@ -1,11 +1,30 @@
-// Package satellite (service.go) is the public entry point for satellite data.
-//
-// This is the only file other packages should import. It exposes:
-//   func FetchSatelliteData() (models.SatelliteData, error)
-//
-// Decision logic:
-//   - If USE_MOCK_DATA == "true" → return GetMockData()
-//   - Otherwise → FetchLiveData() → ParseSatelliteData(raw) → return
-//
-// The handler at handlers/satellite_handler.go calls this function.
 package satellite
+
+import (
+	"mwangaza/internal/models"
+)
+
+// FetchSatelliteData is the main service exposed to the rest of the application.
+// It decides whether to use mock data or the live API based on configuration.
+func FetchSatelliteData() (models.SatelliteData, error) {
+	logRequestStarted()
+
+	if UseMockData() {
+		data := GetMockData()
+		logFinished()
+		return data, nil
+	}
+
+	raw, err := FetchLiveData()
+	if err != nil {
+		return models.SatelliteData{}, err
+	}
+
+	data, err := ParseSatelliteData(raw)
+	if err != nil {
+		return models.SatelliteData{}, err
+	}
+
+	logFinished()
+	return data, nil
+}
