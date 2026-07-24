@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/laobare/mwangaza/backend/internal/models"
+	"mwangaza/backend/internal/models"
 )
 
 func ParseSatelliteData(data []byte) (models.SatelliteData, error) {

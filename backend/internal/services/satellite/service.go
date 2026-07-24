@@ -3,7 +3,7 @@ package satellite
 import (
 	"os"
 
-	"github.com/laobare/mwangaza/backend/internal/models"
+	"mwangaza/backend/internal/models"
 )
 
 func FetchSatelliteData() (models.SatelliteData, error) {

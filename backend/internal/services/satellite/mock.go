@@ -3,7 +3,7 @@ package satellite
 import (
 	"time"
 
-	"github.com/laobare/mwangaza/backend/internal/models"
+	"mwangaza/backend/internal/models"
 )
 
 func GetMockData() models.SatelliteData {
