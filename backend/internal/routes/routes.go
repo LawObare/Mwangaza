@@ -1,27 +1,18 @@
+// Package routes registers all API endpoints on a Gin router.
+//
+// It takes the *sql.DB as a dependency, creates handler structs with it,
+// and wires up middleware (CORS) and all route groups.
+//
+// Routes (under /api prefix):
+//   GET    /health          — health_handler.HealthCheck
+//   GET    /farms           — farm_handler.GetFarms
+//   GET    /farms/:id       — farm_handler.GetFarm
+//   GET    /satellite       — satellite_handler.GetSatelliteData
+//   GET    /recommendation  — recommendation_handler.GetRecommendations
+//   GET    /sms             — sms_handler.GetSMSHistory
+//   POST   /sms/send        — sms_handler.SendSMS
+//
+// Called from main.go:
+//   r := routes.Setup(db)
+//   r.Run(":8080")
 package routes
-
-import (
-	"github.com/gin-gonic/gin"
-	"mwangaza/backend/internal/handlers"
-	"mwangaza/backend/internal/middleware"
-)
-
-func Setup() *gin.Engine {
-	r := gin.New()
-	r.Use(middleware.CORS())
-	r.Use(middleware.Logger())
-	r.Use(middleware.Recovery())
-
-	api := r.Group("/api")
-	{
-		api.GET("/health", handlers.HealthCheck)
-		api.GET("/farms", handlers.GetFarms)
-		api.GET("/farms/:id", handlers.GetFarm)
-		api.GET("/satellite", handlers.GetSatelliteData)
-		api.GET("/recommendation", handlers.GetRecommendations)
-		api.GET("/sms", handlers.GetSMSHistory)
-		api.POST("/sms/send", handlers.SendSMS)
-	}
-
-	return r
-}

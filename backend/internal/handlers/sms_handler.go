@@ -1,39 +1,14 @@
+// Package handlers (sms_handler.go) serves SMS-related endpoints.
+//
+// Endpoints:
+//   GET  /api/sms       — returns sms_logs table (history)
+//   POST /api/sms/send  — accepts { farm_id, message, phone_number },
+//                          validates, sends via SMS service, logs to sms_logs
+//
+// The POST handler should:
+//   1. Validate phone number (+254 format, 12 digits)
+//   2. Validate farm_id exists in farms table
+//   3. Call sms service (mock or Africa's Talking)
+//   4. Insert result into sms_logs table
+//   5. Return success/failure
 package handlers
-
-import (
-	"github.com/gin-gonic/gin"
-	"mwangaza/backend/internal/utils"
-)
-
-var smsHistory = []gin.H{
-	{"id": 1, "farm_id": 1, "phone_number": "+254712345678", "message": "Irrigate for 20 minutes today", "status": "sent", "sent_at": "2025-01-15T08:05:00Z"},
-	{"id": 2, "farm_id": 2, "phone_number": "+254798765432", "message": "Delay irrigation — rain expected", "status": "sent", "sent_at": "2025-01-15T08:06:00Z"},
-	{"id": 3, "farm_id": 3, "phone_number": "+25475551234", "message": "Heat stress alert — increase watering", "status": "failed", "sent_at": "2025-01-15T08:07:00Z"},
-}
-
-func GetSMSHistory(c *gin.Context) {
-	utils.Success(c, smsHistory)
-}
-
-type sendSMSRequest struct {
-	FarmID      int    `json:"farm_id" binding:"required"`
-	Message     string `json:"message" binding:"required"`
-	PhoneNumber string `json:"phone_number" binding:"required"`
-}
-
-func SendSMS(c *gin.Context) {
-	var req sendSMSRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.BadRequest(c, "invalid request body")
-		return
-	}
-	if !utils.IsValidPhone(req.PhoneNumber) {
-		utils.BadRequest(c, "invalid phone number format")
-		return
-	}
-	if !utils.IsValidFarmID(req.FarmID) {
-		utils.BadRequest(c, "invalid farm id")
-		return
-	}
-	utils.Created(c, gin.H{"message": "SMS sent successfully", "farm_id": req.FarmID})
-}

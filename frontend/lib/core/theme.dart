@@ -1,17 +1,10 @@
-import 'package:flutter/material.dart';
-
-class AppTheme {
-  static final darkTheme = ThemeData(
-    brightness: Brightness.dark,
-    primarySwatch: Colors.teal,
-    scaffoldBackgroundColor: const Color(0xFF121212),
-    cardTheme: const CardThemeData(
-      color: Color(0xFF1E1E1E),
-      elevation: 2,
-    ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Color(0xFF1E1E1E),
-      elevation: 0,
-    ),
-  );
-}
+// lib/core/theme.dart — App theme configuration.
+//
+// Responsibilities:
+//   - Define a dark theme using ThemeData with teal primary color.
+//   - Set scaffold background to dark grey (#121212).
+//   - Style cards, app bars, and text for a dashboard look.
+//
+// Used by:
+//   app.dart — applied to the MaterialApp as the theme.
+class AppTheme {}

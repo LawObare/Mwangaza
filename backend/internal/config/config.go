@@ -1,24 +1,14 @@
+// Package config loads environment configuration for the backend.
+// It reads values from .env or system environment and exposes them
+// as a typed Config struct.
+//
+// Required env vars:
+//   PORT              - HTTP server port (default: "8080")
+//   DATABASE_PATH     - path to SQLite database file (default: "./data/lakenet.db")
+//   SPACEIOTBOX_API_KEY   - API key for SpaceIoTBox
+//   SPACEIOTBOX_BASE_URL  - base URL for SpaceIoTBox API
+//   USE_MOCK_DATA         - "true" to use mock satellite/SMS data (default: "true")
+//   SMS_API_KEY           - API key for Africa's Talking
+//
+// Config struct is consumed by main.go to initialize the database and services.
 package config
-
-import "os"
-
-type Config struct {
-	Port        string
-	DatabaseURL string
-	MockData    bool
-}
-
-func Load() *Config {
-	return &Config{
-		Port:        getEnv("PORT", "8080"),
-		DatabaseURL: getEnv("DATABASE_URL", ""),
-		MockData:    os.Getenv("USE_MOCK_DATA") == "true",
-	}
-}
-
-func getEnv(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return fallback
-}

@@ -1,18 +1,15 @@
-import '../models/farm.dart';
-import 'api_service.dart';
-
-class FarmService {
-  final ApiService _api;
-
-  FarmService(this._api);
-
-  Future<List<Farm>> getFarms() async {
-    final data = await _api.getList('/farms');
-    return data.map((e) => Farm.fromJson(e as Map<String, dynamic>)).toList();
-  }
-
-  Future<Farm> getFarm(int id) async {
-    final data = await _api.get('/farms/$id');
-    return Farm.fromJson(data);
-  }
-}
+// lib/services/farm_service.dart — Farm API service.
+//
+// Endpoints:
+//   GET /api/farms      → getFarms() returns List<Farm>
+//   GET /api/farms/:id  → getFarm(id) returns Farm
+//
+// Responsibilities:
+//   - Use ApiService to call backend endpoints.
+//   - Deserialize JSON responses into model objects.
+//
+// Connects to:
+//   api_service.dart  — makes HTTP requests.
+//   models/farm.dart   — target model for deserialization.
+//   screens/farms/, screens/map/ — consumers of farm data.
+class FarmService {}

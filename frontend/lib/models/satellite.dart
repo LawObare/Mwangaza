@@ -1,28 +1,15 @@
-class SatelliteData {
-  final double soilMoisture;
-  final double temperature;
-  final double rainProbability;
-  final double ndvi;
-  final double windSpeed;
-  final String timestamp;
-
-  SatelliteData({
-    required this.soilMoisture,
-    required this.temperature,
-    required this.rainProbability,
-    required this.ndvi,
-    required this.windSpeed,
-    required this.timestamp,
-  });
-
-  factory SatelliteData.fromJson(Map<String, dynamic> json) {
-    return SatelliteData(
-      soilMoisture: (json['soil_moisture'] as num).toDouble(),
-      temperature: (json['temperature'] as num).toDouble(),
-      rainProbability: (json['rain_probability'] as num).toDouble(),
-      ndvi: (json['ndvi'] as num).toDouble(),
-      windSpeed: (json['wind_speed'] as num).toDouble(),
-      timestamp: json['timestamp'] as String,
-    );
-  }
-}
+// lib/models/satellite.dart — Satellite data model.
+//
+// Fields:
+//   double soilMoisture, double temperature, double rainProbability,
+//   double ndvi, double windSpeed, String timestamp
+//
+// Responsibilities:
+//   - Define a SatelliteData class with a fromJson() factory constructor.
+//   - JSON keys match the Go backend GET /api/satellite response.
+//
+// Used by:
+//   services/satellite_service.dart — deserializes API response.
+//   screens/dashboard/ — displays current environmental data.
+//   widgets/satellite_card.dart — renders the satellite data card.
+class SatelliteData {}

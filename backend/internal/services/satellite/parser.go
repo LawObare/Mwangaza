@@ -1,24 +1,16 @@
+// Package satellite (parser.go) converts SpaceIoTBox JSON into models.SatelliteData.
+//
+// Function:
+//   func ParseSatelliteData(data []byte) (models.SatelliteData, error)
+//
+// Steps:
+//   1. Unmarshal []byte into the private apiResponse struct (defined in types.go)
+//   2. Extract fields from the nested weather/soil/vegetation objects
+//   3. Return a populated models.SatelliteData
+//
+// No HTTP calls. No env reading. Pure data transformation.
+// The apiResponse struct maps to SpaceIoTBox's JSON shape:
+//   { "weather": { "temperature", "rain_probability", "wind_speed" },
+//     "soil": { "moisture" },
+//     "vegetation": { "ndvi" } }
 package satellite
-
-import (
-	"encoding/json"
-	"time"
-
-	"mwangaza/backend/internal/models"
-)
-
-func ParseSatelliteData(data []byte) (models.SatelliteData, error) {
-	var resp apiResponse
-	if err := json.Unmarshal(data, &resp); err != nil {
-		return models.SatelliteData{}, err
-	}
-
-	return models.SatelliteData{
-		SoilMoisture: resp.Soil.Moisture,
-		Temperature:  resp.Weather.Temperature,
-		RainProb:     resp.Weather.RainProb,
-		NDVI:         resp.Vegetation.NDVI,
-		WindSpeed:    resp.Weather.WindSpeed,
-		Timestamp:    time.Now(),
-	}, nil
-}

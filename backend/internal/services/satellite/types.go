@@ -1,21 +1,14 @@
+// Package satellite (types.go) defines structs for SpaceIoTBox API JSON decoding.
+//
+// These types are unexported (lowercase) — they only exist to deserialize
+// the external API response. They are NOT used outside parser.go.
+//
+// Structs:
+//   apiResponse — top-level: { "weather": {...}, "soil": {...}, "vegetation": {...} }
+//   soil        — { "moisture": float64 }
+//   weather     — { "temperature": float64, "rain_probability": float64, "wind_speed": float64 }
+//   vegetation  — { "ndvi": float64 }
+//
+// models.SatelliteData is the public type used everywhere else.
+// Do NOT duplicate SatelliteData fields here.
 package satellite
-
-type apiResponse struct {
-	Weather    weather    `json:"weather"`
-	Soil       soil       `json:"soil"`
-	Vegetation vegetation `json:"vegetation"`
-}
-
-type soil struct {
-	Moisture float64 `json:"moisture"`
-}
-
-type weather struct {
-	Temperature   float64 `json:"temperature"`
-	RainProb      float64 `json:"rain_probability"`
-	WindSpeed     float64 `json:"wind_speed"`
-}
-
-type vegetation struct {
-	NDVI float64 `json:"ndvi"`
-}
