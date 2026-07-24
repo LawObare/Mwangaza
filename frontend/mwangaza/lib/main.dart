@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mwangaza/auth/screens/signup.dart';
+import 'package:mwangaza/auth/screen/signup.dart';
 
 void main() {
   runApp(const MyApp());
