@@ -48,13 +48,13 @@ func (h *RecommendationHandler) Generate(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		rec, _, err := recommendation.GenerateForFarm(h.Store, h.Config, farm)
+		recommendations, _, err := recommendation.GenerateForFarm(h.Store, h.Config, farm)
 		if err != nil {
 			utils.Error(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		utils.Created(w, rec)
+		utils.Created(w, recommendations)
 		return
 	}
 
@@ -64,13 +64,13 @@ func (h *RecommendationHandler) Generate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	result := make([]models.Recommendation, 0, len(farms))
+	result := make(map[int][]models.Recommendation, len(farms))
 	for _, farm := range farms {
-		rec, _, err := recommendation.GenerateForFarm(h.Store, h.Config, farm)
+		recommendations, _, err := recommendation.GenerateForFarm(h.Store, h.Config, farm)
 		if err != nil {
 			continue
 		}
-		result = append(result, rec)
+		result[farm.ID] = recommendations
 	}
 
 	utils.Created(w, result)

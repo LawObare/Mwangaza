@@ -1,8 +1,6 @@
 package recommendation
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
 	"mwangaza/internal/config"
@@ -11,95 +9,72 @@ import (
 	"mwangaza/internal/services/satellite"
 )
 
-func GenerateForFarm(store *database.Store, cfg config.Config, farm models.Farm) (models.Recommendation, models.SatelliteData, error) {
+func GenerateForFarm(store *database.Store, cfg config.Config, farm models.Farm) ([]models.Recommendation, models.SatelliteData, error) {
 	data, err := satellite.FetchAndStore(store, cfg, farm)
 	if err != nil {
-		return models.Recommendation{}, models.SatelliteData{}, err
+		return nil, models.SatelliteData{}, err
 	}
 
-	rec := GenerateRecommendation(farm, data)
-	stored, err := store.AddRecommendation(rec)
-	if err != nil {
-		return models.Recommendation{}, data, err
+	recommendations := GenerateRecommendations(farm, data)
+	stored := make([]models.Recommendation, 0, len(recommendations))
+	for _, recommendation := range recommendations {
+		recommendation, err = store.AddRecommendation(recommendation)
+		if err != nil {
+			return nil, data, err
+		}
+		stored = append(stored, recommendation)
 	}
 
 	return stored, data, nil
 }
 
-func GenerateRecommendation(farm models.Farm, data models.SatelliteData) models.Recommendation {
-	crop := strings.ToLower(strings.TrimSpace(farm.Crop))
+// GenerateRecommendations evaluates every applicable rule and returns a single
+// monitoring result only when the farm does not need an alert.
+func GenerateRecommendations(farm models.Farm, data models.SatelliteData) []models.Recommendation {
 	now := time.Now().UTC().Format(time.RFC3339)
-
-	recommendation := models.Recommendation{
-		FarmID:    farm.ID,
-		Crop:      farm.Crop,
-		Type:      "monitoring",
-		Message:   "Conditions are stable. Continue monitoring the field.",
-		Severity:  "low",
-		Priority:  "LOW",
-		Reason:    "No critical threshold was triggered.",
-		CreatedAt: now,
+	recommendations := make([]models.Recommendation, 0, 7)
+	for _, rule := range []rule{
+		droughtStressRule, heatStressRule, heavyRainRule, rainfallRule,
+		irrigationRule, temperatureRule, ndviRule, windRule,
+	} {
+		if recommendation := rule(farm, data, now); recommendation != nil {
+			recommendations = append(recommendations, *recommendation)
+		}
 	}
-
-	switch {
-	case data.RainProbability >= 80:
-		recommendation.Type = "rainfall"
-		recommendation.Severity = "high"
-		recommendation.Priority = "HIGH"
-		switch crop {
-		case "maize":
-			recommendation.Message = "Heavy rainfall expected soon. Delay fertilizer application until after the rain."
-		case "beans":
-			recommendation.Message = "Heavy rainfall expected soon. Delay planting to avoid seed loss."
-		case "rice":
-			recommendation.Message = "Heavy rainfall expected soon. Check drainage and keep water levels under control."
-		case "sugarcane":
-			recommendation.Message = "Heavy rainfall expected soon. Suspend irrigation and protect field access."
-		default:
-			recommendation.Message = "Heavy rainfall expected soon. Delay field operations until conditions improve."
-		}
-		recommendation.Reason = fmt.Sprintf("rain probability %.0f%% is above the heavy-rain threshold", data.RainProbability)
-	case data.SoilMoisture < 20 && data.RainProbability < 30:
-		recommendation.Type = "irrigation"
-		recommendation.Severity = "high"
-		recommendation.Priority = "HIGH"
-		switch crop {
-		case "rice":
-			recommendation.Message = "Water levels are low. Refill paddies or check irrigation canals."
-		case "tea":
-			recommendation.Message = "Soil is dry. Irrigate or increase moisture monitoring today."
-		case "cassava":
-			recommendation.Message = "Dry soil detected. Water young plants soon to reduce stress."
-		default:
-			recommendation.Message = "Dry soil detected. Irrigate today if water is available."
-		}
-		recommendation.Reason = fmt.Sprintf("soil moisture %.0f%% is below the dry threshold and rain chance is low", data.SoilMoisture)
-	case data.Temperature >= 33:
-		recommendation.Type = "temperature"
-		recommendation.Severity = "medium"
-		recommendation.Priority = "MEDIUM"
-		switch crop {
-		case "tea":
-			recommendation.Message = "High temperature detected. Increase moisture monitoring and shade sensitive plots."
-		case "maize":
-			recommendation.Message = "High temperature detected. Monitor for heat stress and irrigate in the evening."
-		default:
-			recommendation.Message = "High temperature detected. Check water availability and monitor crop stress."
-		}
-		recommendation.Reason = fmt.Sprintf("temperature %.1fC is above the heat threshold", data.Temperature)
-	case data.NDVI < 0.35:
-		recommendation.Type = "ndvi"
-		recommendation.Severity = "medium"
-		recommendation.Priority = "MEDIUM"
-		recommendation.Message = "Vegetation health looks weak. Inspect the field for pests, disease, or nutrient stress."
-		recommendation.Reason = fmt.Sprintf("NDVI %.2f is below the vegetation-health threshold", data.NDVI)
-	case data.RainProbability >= 55:
-		recommendation.Type = "rainfall"
-		recommendation.Severity = "medium"
-		recommendation.Priority = "MEDIUM"
-		recommendation.Message = "Rain is likely soon. Prepare field drains and avoid spraying before the rain."
-		recommendation.Reason = fmt.Sprintf("rain probability %.0f%% suggests rain is coming", data.RainProbability)
+	if len(recommendations) == 0 {
+		recommendations = append(recommendations, monitoringRecommendation(farm, now))
 	}
+	return recommendations
+}
 
-	return recommendation
+// GenerateRecommendation remains as a compatibility helper for callers that
+// need the most important current result.
+func GenerateRecommendation(farm models.Farm, data models.SatelliteData) models.Recommendation {
+	return HighestPriority(GenerateRecommendations(farm, data))
+}
+
+// HighestPriority returns the most urgent recommendation while preserving rule
+// evaluation order when two recommendations have the same priority.
+func HighestPriority(recommendations []models.Recommendation) models.Recommendation {
+	if len(recommendations) == 0 {
+		return models.Recommendation{}
+	}
+	best := recommendations[0]
+	for _, recommendation := range recommendations[1:] {
+		if priorityRank(recommendation.Priority) > priorityRank(best.Priority) {
+			best = recommendation
+		}
+	}
+	return best
+}
+
+func priorityRank(priority string) int {
+	switch priority {
+	case "HIGH":
+		return 3
+	case "MEDIUM":
+		return 2
+	default:
+		return 1
+	}
 }

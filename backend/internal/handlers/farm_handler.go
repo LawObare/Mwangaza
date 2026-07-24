@@ -94,10 +94,13 @@ func (h *FarmHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	snapshot, err := satellite.FetchAndStore(h.Store, h.Config, created)
 	if err == nil {
-		rec := recommendation.GenerateRecommendation(created, snapshot)
-		if _, recErr := h.Store.AddRecommendation(rec); recErr == nil {
-			created.Status = statusFromSeverity(rec.Severity)
+		recommendations := recommendation.GenerateRecommendations(created, snapshot)
+		for _, rec := range recommendations {
+			if _, recErr := h.Store.AddRecommendation(rec); recErr != nil {
+				break
+			}
 		}
+		created.Status = statusFromSeverity(recommendation.HighestPriority(recommendations).Severity)
 		created.SoilMoisture = snapshot.SoilMoisture
 		created.Temperature = snapshot.Temperature
 		created.RainProbability = snapshot.RainProbability

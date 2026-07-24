@@ -16,10 +16,10 @@ import (
 type Store struct {
 	mu                   sync.RWMutex
 	path                 string
-	Farms                []models.Farm            `json:"farms"`
-	SatelliteData        []models.SatelliteData    `json:"satellite_data"`
-	Recommendations      []models.Recommendation   `json:"recommendations"`
-	SMSLogs              []models.SmsMessage       `json:"sms_logs"`
+	Farms                []models.Farm           `json:"farms"`
+	SatelliteData        []models.SatelliteData  `json:"satellite_data"`
+	Recommendations      []models.Recommendation `json:"recommendations"`
+	SMSLogs              []models.SmsMessage     `json:"sms_logs"`
 	nextFarmID           int
 	nextSatelliteID      int
 	nextRecommendationID int
@@ -255,21 +255,54 @@ func (s *Store) ListRecommendations(farmID *int) []models.Recommendation {
 }
 
 func (s *Store) LatestRecommendationForFarm(farmID int) (models.Recommendation, bool) {
+	batch := s.LatestRecommendationBatchForFarm(farmID)
+	if len(batch) == 0 {
+		return models.Recommendation{}, false
+	}
+	return batch[0], true
+}
+
+// LatestRecommendationBatchForFarm returns every recommendation created by
+// the newest generation run, ordered from highest to lowest priority.
+func (s *Store) LatestRecommendationBatchForFarm(farmID int) []models.Recommendation {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var latest models.Recommendation
-	found := false
+	latestCreatedAt := ""
 	for _, item := range s.Recommendations {
-		if item.FarmID != farmID {
-			continue
-		}
-		if !found || item.CreatedAt > latest.CreatedAt || (item.CreatedAt == latest.CreatedAt && item.ID > latest.ID) {
-			latest = item
-			found = true
+		if item.FarmID == farmID && item.CreatedAt > latestCreatedAt {
+			latestCreatedAt = item.CreatedAt
 		}
 	}
-	return latest, found
+	if latestCreatedAt == "" {
+		return nil
+	}
+
+	batch := make([]models.Recommendation, 0)
+	for _, item := range s.Recommendations {
+		if item.FarmID == farmID && item.CreatedAt == latestCreatedAt {
+			batch = append(batch, item)
+		}
+	}
+	sort.SliceStable(batch, func(i, j int) bool {
+		left, right := recommendationPriorityRank(batch[i].Priority), recommendationPriorityRank(batch[j].Priority)
+		if left == right {
+			return batch[i].ID < batch[j].ID
+		}
+		return left > right
+	})
+	return batch
+}
+
+func recommendationPriorityRank(priority string) int {
+	switch strings.ToUpper(strings.TrimSpace(priority)) {
+	case "HIGH":
+		return 3
+	case "MEDIUM":
+		return 2
+	default:
+		return 1
+	}
 }
 
 func (s *Store) AddRecommendation(rec models.Recommendation) (models.Recommendation, error) {
