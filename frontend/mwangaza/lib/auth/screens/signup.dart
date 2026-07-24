@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'login.dart'; // Make sure this import points to your login page file
+import 'login.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -29,7 +29,6 @@ class _SignUpPageState extends State<SignUpPage> {
 
   void _handleSignUp() {
     if (_formKey.currentState!.validate() && _agreedToTerms) {
-      // Handle sign up logic here
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Account created successfully!'),
@@ -51,7 +50,7 @@ class _SignUpPageState extends State<SignUpPage> {
     return Scaffold(
       body: Row(
         children: [
-          // Image on the left side
+          // Image on the left side with error handling
           Expanded(
             flex: 1,
             child: Container(
@@ -59,6 +58,33 @@ class _SignUpPageState extends State<SignUpPage> {
                 image: DecorationImage(
                   image: const AssetImage('assets/signup.jpg'),
                   fit: BoxFit.cover,
+                  onError: (exception, stackTrace) {
+                    print('Error loading image: $exception');
+                    // You can also show a fallback
+                  },
+                ),
+                color: Colors.grey[200], // Fallback color
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.blue.withOpacity(0.4),
+                      Colors.purple.withOpacity(0.2),
+                    ],
+                  ),
+                ),
+                child: const Center(
+                  child: Text(
+                    'Mwangaza',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -90,7 +116,7 @@ class _SignUpPageState extends State<SignUpPage> {
                               ),
                               child: const Center(
                                 child: Text(
-                                  'BLJ',
+                                  'IBM',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -407,7 +433,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
                         const SizedBox(height: 24),
 
-                        // Sign In Link - Updated with navigation
+                        // Sign In Link
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -420,7 +446,6 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                             GestureDetector(
                               onTap: () {
-                                // Navigate to login page
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
