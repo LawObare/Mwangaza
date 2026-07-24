@@ -1,36 +1,38 @@
 # Mwangaza Backend
 
-Go-based REST API for farm advisory system.
+Hackathon-friendly Go REST API for the farm advisory demo.
 
-## Tech Stack
+## What It Does
 
-- **Framework:** Gin
-- **Database:** SQLite
-- **Satellite Data:** SpaceIoTBox API
-- **SMS:** Africa's Talking
+- Serves farm, satellite, recommendation, and SMS endpoints
+- Uses a lightweight file-backed demo store
+- Falls back to mock satellite and SMS data when `USE_MOCK_DATA=true`
 
-## Getting Started
+## Run It
 
-1. Copy `.env.example` to `.env` and configure variables
-2. Install Go dependencies: `go mod tidy`
-3. Run the server: `go run cmd/main.go`
+1. `cd backend`
+2. Copy `.env.example` to `.env` if needed
+3. Run `go run ./cmd`
 
 ## Environment Variables
 
-See `.env.example` for all required configuration.
+- `PORT` - HTTP server port, default `8080`
+- `DATABASE_PATH` - path to the local demo store file, default `./data/lakenet.db`
+- `USE_MOCK_DATA` - `true` for offline demo mode, default `true`
+- `SPACEIOTBOX_API_KEY` - optional live satellite API key
+- `SPACEIOTBOX_BASE_URL` - optional live satellite API base URL
+- `SMS_API_KEY` - optional Africa's Talking API key
+- `SMS_USERNAME` - optional Africa's Talking username
+- `SMS_SENDER_ID` - optional sender ID
 
-## Project Structure
+## Key Endpoints
 
-```
-cmd/main.go          — Entry point
-internal/config/     — Environment configuration
-internal/database/   — SQLite connection, migrations, seeds
-internal/handlers/   — HTTP request handlers
-internal/middleware/  — CORS middleware
-internal/models/      — Data structures
-internal/routes/      — Route registration
-internal/services/    — Business logic (satellite, recommendation, SMS)
-internal/utils/       — Response helpers
-data/                 — SQLite database file
-docs/                 — Project documentation
-```
+- `GET /api/health`
+- `GET /api/farms`
+- `POST /api/farms`
+- `GET /api/farms/{id}`
+- `GET /api/satellite`
+- `GET /api/recommendation`
+- `POST /api/recommendation`
+- `GET /api/sms`
+- `POST /api/sms/send`
