@@ -1,0 +1,172 @@
+{
+  "farms": [
+    {
+      "id": 1,
+      "name": "Green Valley Farm",
+      "farmer": "Amina Njeri",
+      "phone": "+254700000001",
+      "county": "Kakamega",
+      "sub_county": "Mumias",
+      "crop": "Maize",
+      "growth_stage": "Vegetative",
+      "latitude": -0.3071,
+      "longitude": 34.7894,
+      "preferred_language": "English",
+      "status": "new",
+      "soil_moisture": 0,
+      "temperature": 0,
+      "rain_probability": 0,
+      "ndvi": 0,
+      "wind_speed": 0,
+      "last_sms_sent": "",
+      "created_at": "2026-07-25T09:12:55Z",
+      "updated_at": "2026-07-25T09:12:55Z"
+    },
+    {
+      "id": 2,
+      "name": "Sunrise Acres",
+      "farmer": "John Ouma",
+      "phone": "+254700000002",
+      "county": "Siaya",
+      "sub_county": "Bondo",
+      "crop": "Rice",
+      "growth_stage": "Flowering",
+      "latitude": -0.0931,
+      "longitude": 34.2677,
+      "preferred_language": "Swahili",
+      "status": "new",
+      "soil_moisture": 0,
+      "temperature": 0,
+      "rain_probability": 0,
+      "ndvi": 0,
+      "wind_speed": 0,
+      "last_sms_sent": "",
+      "created_at": "2026-07-25T09:12:55Z",
+      "updated_at": "2026-07-25T09:12:55Z"
+    },
+    {
+      "id": 3,
+      "name": "Hilltop Farm",
+      "farmer": "Grace Wanjiku",
+      "phone": "+254700000003",
+      "county": "Nyeri",
+      "sub_county": "Kieni",
+      "crop": "Tea",
+      "growth_stage": "Harvesting",
+      "latitude": -0.4201,
+      "longitude": 36.9476,
+      "preferred_language": "English",
+      "status": "new",
+      "soil_moisture": 0,
+      "temperature": 0,
+      "rain_probability": 0,
+      "ndvi": 0,
+      "wind_speed": 0,
+      "last_sms_sent": "",
+      "created_at": "2026-07-25T09:12:55Z",
+      "updated_at": "2026-07-25T09:12:55Z"
+    }
+  ],
+  "satellite_data": [
+    {
+      "id": 1,
+      "farm_id": 1,
+      "soil_moisture": 18,
+      "temperature": 33,
+      "rain_probability": 12,
+      "ndvi": 0.42,
+      "wind_speed": 4,
+      "source": "seed",
+      "timestamp": "2026-07-25T06:12:55Z"
+    },
+    {
+      "id": 2,
+      "farm_id": 2,
+      "soil_moisture": 68,
+      "temperature": 27,
+      "rain_probability": 84,
+      "ndvi": 0.64,
+      "wind_speed": 5,
+      "source": "seed",
+      "timestamp": "2026-07-25T07:12:55Z"
+    },
+    {
+      "id": 3,
+      "farm_id": 3,
+      "soil_moisture": 22,
+      "temperature": 34,
+      "rain_probability": 35,
+      "ndvi": 0.29,
+      "wind_speed": 6,
+      "source": "seed",
+      "timestamp": "2026-07-25T08:12:55Z"
+    }
+  ],
+  "recommendations": [
+    {
+      "id": 1,
+      "farm_id": 1,
+      "crop": "Maize",
+      "type": "irrigation",
+      "message": "Dry soil detected. Irrigate today before noon.",
+      "severity": "high",
+      "priority": "HIGH",
+      "confidence": "",
+      "reason": "soil moisture below the dry threshold",
+      "created_at": "2026-07-25T09:12:55Z"
+    },
+    {
+      "id": 2,
+      "farm_id": 2,
+      "crop": "Rice",
+      "type": "rainfall",
+      "message": "Heavy rainfall expected tomorrow. Keep drainage clear and delay fertilizer.",
+      "severity": "high",
+      "priority": "HIGH",
+      "confidence": "",
+      "reason": "rain probability is above the heavy-rain threshold",
+      "created_at": "2026-07-25T09:12:55Z"
+    },
+    {
+      "id": 3,
+      "farm_id": 3,
+      "crop": "Tea",
+      "type": "temperature",
+      "message": "High temperature and low NDVI detected. Increase moisture monitoring and inspect the crop.",
+      "severity": "medium",
+      "priority": "MEDIUM",
+      "confidence": "",
+      "reason": "temperature and NDVI indicate stress",
+      "created_at": "2026-07-25T09:12:55Z"
+    }
+  ],
+  "sms_logs": [
+    {
+      "id": 1,
+      "farm_id": 1,
+      "phone_number": "+254700000001",
+      "message": "Dry soil detected. Irrigate today before noon.",
+      "status": "sent",
+      "provider": "mock",
+      "sent_at": "2026-07-25T09:12:55Z"
+    },
+    {
+      "id": 2,
+      "farm_id": 2,
+      "phone_number": "+254700000002",
+      "message": "Heavy rainfall expected tomorrow. Keep drainage clear and delay fertilizer.",
+      "status": "sent",
+      "provider": "mock",
+      "sent_at": "2026-07-25T09:12:55Z"
+    },
+    {
+      "id": 3,
+      "farm_id": 3,
+      "phone_number": "+254700000003",
+      "message": "High temperature and low NDVI detected. Increase moisture monitoring and inspect the crop.",
+      "status": "sent",
+      "provider": "mock",
+      "sent_at": "2026-07-25T09:12:55Z"
+    }
+  ]
+}
