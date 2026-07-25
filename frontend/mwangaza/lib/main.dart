@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mwangaza/auth/screens/signup.dart';
-import 'package:mwangaza/home/screens/home.dart';
+import 'package:mwangaza/features/home/screens/home.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const HomeScreen(),
+      home: const SignUpPage(),
     );
   }
 }

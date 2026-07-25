@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'login.dart'; // Make sure this import points to your login page file
+import 'package:mwangaza/auth/domain/repository/auth_repository.dart';
+import 'login.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -10,39 +11,75 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _agreedToTerms = false;
+  bool _isLoading = false;
+
+  final AuthRemoteRepository _authRepo = AuthRemoteRepository();
 
   @override
   void dispose() {
-    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _handleSignUp() {
-    if (_formKey.currentState!.validate() && _agreedToTerms) {
-      // Handle sign up logic here
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account created successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else if (!_agreedToTerms) {
+  Future<void> _handleSignUp() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (!_agreedToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please agree to the Terms of Service'),
           backgroundColor: Colors.red,
         ),
       );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final user = await _authRepo.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account created successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to login page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -136,23 +173,6 @@ class _SignUpPageState extends State<SignUpPage> {
                           key: _formKey,
                           child: Column(
                             children: [
-                              // Full Name
-                              TextFormField(
-                                controller: _nameController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Full Name',
-                                  hintText: 'Enter your full name',
-                                  prefixIcon: Icon(Icons.person_outline),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter your full name';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 16),
-
                               // Email
                               TextFormField(
                                 controller: _emailController,
@@ -300,14 +320,23 @@ class _SignUpPageState extends State<SignUpPage> {
 
                         // Sign Up Button
                         ElevatedButton(
-                          onPressed: _handleSignUp,
-                          child: const Text(
-                            'Create Account',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          onPressed: _isLoading ? null : _handleSignUp,
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Create Account',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                         ),
 
                         const SizedBox(height: 24),
@@ -407,7 +436,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
                         const SizedBox(height: 24),
 
-                        // Sign In Link - Updated with navigation
+                        // Sign In Link
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -420,7 +449,6 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                             GestureDetector(
                               onTap: () {
-                                // Navigate to login page
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
