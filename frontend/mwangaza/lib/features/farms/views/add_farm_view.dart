@@ -41,7 +41,7 @@ class _AddFarmViewState extends State<AddFarmView> {
 
     setState(() => _submitting = true);
     try {
-      await _api.post<Map<String, dynamic>>(
+      final response = await _api.post<dynamic>(
         'farms',
         data: {
           'name': _farmName.text.trim(),
@@ -56,6 +56,9 @@ class _AddFarmViewState extends State<AddFarmView> {
         },
       );
       if (!mounted) return;
+      final responseBody = response.data;
+      final payload = responseBody is Map ? responseBody['data'] : null;
+      final farmID = payload is Map ? payload['id'] as int? : null;
       _formKey.currentState!.reset();
       _farmName.clear();
       _farmerName.clear();
@@ -68,9 +71,13 @@ class _AddFarmViewState extends State<AddFarmView> {
         _crop = 'Maize';
         _language = 'English';
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Farm saved. Farm advice is being prepared.'), backgroundColor: Colors.green),
-      );
+      if (farmID == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Farm saved. Farm advice is being prepared.'), backgroundColor: Colors.green),
+        );
+      } else {
+        await _showSavedDialog(farmID);
+      }
     } on DioException catch (error) {
       final body = error.response?.data;
       final message = body is Map ? body['error']?.toString() : null;
@@ -85,6 +92,50 @@ class _AddFarmViewState extends State<AddFarmView> {
   void _showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.red));
+  }
+
+  Future<void> _showSavedDialog(int farmID) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Farm saved'),
+        content: const Text('Advice was generated for this farm. Would you like to send the latest advice to the farmer now?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Not now'),
+          ),
+          FilledButton.icon(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              await _sendSMS(farmID);
+            },
+            icon: const Icon(Icons.sms_outlined),
+            label: const Text('Send SMS'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _sendSMS(int farmID) async {
+    setState(() => _submitting = true);
+    try {
+      await _api.post<dynamic>('sms/send', data: {'farm_id': farmID});
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('SMS alert sent to the farmer.'), backgroundColor: Colors.green),
+      );
+    } on DioException catch (error) {
+      final body = error.response?.data;
+      final message = body is Map ? body['error']?.toString() : null;
+      _showError(message ?? 'Could not send the SMS alert.');
+    } catch (_) {
+      _showError('Could not send the SMS alert.');
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   String? _required(String? value, String label) {
