@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mwangaza/auth/screens/signup.dart';
-import 'package:mwangaza/features/home/screens/home.dart';
+import 'package:mwangaza/auth/screen/signup.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,3 +36,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+

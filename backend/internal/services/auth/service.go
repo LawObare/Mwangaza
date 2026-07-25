@@ -1,19 +1,49 @@
-// Package auth (service.go) is the public entry point for authentication logic.
-//
-// It coordinates registration and login workflows:
-//
-// Register(name, email, phone, password) → (User, error)
-//   1. Validate input fields
-//   2. Check email uniqueness via user_repository
-//   3. Hash password via password.go
-//   4. Store user via user_repository
-//   5. Return created user (without password)
-//
-// Login(email, password) → (token string, User, error)
-//   1. Lookup user by email via user_repository
-//   2. Compare password hash via password.go
-//   3. Generate JWT via jwt.go
-//   4. Return token and user
-//
-// The handler at handlers/auth_handler.go calls this service.
 package auth
+
+import (
+	"errors"
+
+	"mwangaza/internal/models"
+	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	ErrEmailExists  = errors.New("email already registered")
+	ErrUserNotFound = errors.New("user not found")
+)
+
+type Repository interface {
+	CreateUser(name, email, phone, passwordHash string) (*models.User, error)
+	GetUserByEmail(email string) (*models.User, error)
+	GetUserByID(id int) (*models.User, error)
+}
+
+type Service struct {
+	repo Repository
+}
+
+func NewService(repo Repository) *Service {
+	return &Service{repo: repo}
+}
+
+func (s *Service) Register(name, email, phone, password string) (*models.User, error) {
+	existing, _ := s.repo.GetUserByEmail(email)
+	if existing != nil {
+		return nil, ErrEmailExists
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.CreateUser(name, email, phone, string(hash))
+}
+
+func (s *Service) GetUserByEmail(email string) (*models.User, error) {
+	return s.repo.GetUserByEmail(email)
+}
+
+func (s *Service) Repository() Repository {
+	return s.repo
+}

@@ -1,14 +1,27 @@
 package handlers
 
-import "github.com/gin-gonic/gin"
+import (
+	"net/http"
+	"time"
 
-// HealthCheck  godoc
-// @Summary     Health check
-// @Description Returns server status
-// @Tags        system
-// @Produce     json
-// @Success     200  {object}  map[string]string
-// @Router      /health [get]
-func HealthCheck(c *gin.Context) {
-	c.JSON(200, map[string]string{"status": "ok"})
+	"mwangaza/internal/config"
+	"mwangaza/internal/utils"
+)
+
+type HealthHandler struct {
+	Config config.Config
+}
+
+func NewHealthHandler(cfg config.Config) *HealthHandler {
+	return &HealthHandler{Config: cfg}
+}
+
+func (h *HealthHandler) Get(w http.ResponseWriter, r *http.Request) {
+	utils.Success(w, map[string]any{
+		"status":            "ok",
+		"service":           "mwangaza",
+		"mock_mode":         h.Config.UseMockData,
+		"default_language":  h.Config.DefaultLanguage,
+		"timestamp":         time.Now().UTC().Format(time.RFC3339),
+	})
 }

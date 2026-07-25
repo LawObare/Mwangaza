@@ -1,41 +1,88 @@
 package handlers
 
 import (
-	"github.com/gin-gonic/gin"
+	"errors"
+	"io"
+	"net/http"
+
+	"mwangaza/internal/config"
+	"mwangaza/internal/database"
 	"mwangaza/internal/models"
+	"mwangaza/internal/services/recommendation"
+	"mwangaza/internal/services/sms"
+	"mwangaza/internal/utils"
 )
 
-// GetSMSHistory  godoc
-// @Summary      Get SMS history
-// @Description  Returns all sent SMS messages
-// @Tags         sms
-// @Produce      json
-// @Security     BearerAuth
-// @Success      200  {object}  []models.SmsLog
-// @Failure      401  {object}  map[string]interface{}
-// @Router       /sms [get]
-func GetSMSHistory(c *gin.Context) {
-	c.JSON(200, []models.SmsLog{})
+type SMSHandler struct {
+	Store  *database.Store
+	Config config.Config
 }
 
-type smsRequest struct {
-	FarmID      int    `json:"farm_id"`
-	Message     string `json:"message"`
-	PhoneNumber string `json:"phone_number"`
+func NewSMSHandler(store *database.Store, cfg config.Config) *SMSHandler {
+	return &SMSHandler{Store: store, Config: cfg}
 }
 
-// SendSMS      godoc
-// @Summary     Send an SMS
-// @Description Sends an advisory SMS to a farmer's phone
-// @Tags        sms
-// @Accept      json
-// @Produce     json
-// @Param       body  body      smsRequest  true  "SMS payload"
-// @Security    BearerAuth
-// @Success     201   {object}  map[string]interface{}
-// @Failure     400   {object}  map[string]interface{}
-// @Failure     401   {object}  map[string]interface{}
-// @Router      /sms/send [post]
-func SendSMS(c *gin.Context) {
-	c.JSON(201, map[string]interface{}{})
+func (h *SMSHandler) List(w http.ResponseWriter, r *http.Request) {
+	utils.Success(w, h.Store.ListSMSLogs())
+}
+
+func (h *SMSHandler) Send(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		FarmID      int    `json:"farm_id"`
+		PhoneNumber string `json:"phone_number"`
+		Message     string `json:"message"`
+	}
+
+	if err := utils.DecodeJSON(r, &req); err != nil && !errors.Is(err, io.EOF) {
+		utils.Error(w, http.StatusBadRequest, "invalid sms payload")
+		return
+	}
+
+	var farm models.Farm
+	var found bool
+	if req.FarmID > 0 {
+		farm, found = h.Store.GetFarm(req.FarmID)
+		if !found {
+			utils.Error(w, http.StatusNotFound, "farm not found")
+			return
+		}
+	}
+
+	phone := req.PhoneNumber
+	if phone == "" && found {
+		phone = farm.Phone
+	}
+
+	message := req.Message
+	if message == "" && found {
+		if rec, ok := h.Store.LatestRecommendationForFarm(farm.ID); ok {
+			message = rec.Message
+		} else {
+			recs, _, err := recommendation.GenerateForFarm(h.Store, h.Config, farm)
+			if err == nil && len(recs) > 0 {
+				message = recs[0].Message
+			}
+		}
+	}
+
+	if phone == "" {
+		utils.Error(w, http.StatusBadRequest, "phone number is required")
+		return
+	}
+	if message == "" {
+		utils.Error(w, http.StatusBadRequest, "message is required")
+		return
+	}
+
+	sent, err := sms.Send(h.Store, h.Config, models.SmsMessage{
+		FarmID:      req.FarmID,
+		PhoneNumber: phone,
+		Message:     message,
+	})
+	if err != nil {
+		utils.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.Created(w, sent)
 }

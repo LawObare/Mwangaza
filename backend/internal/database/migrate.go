@@ -1,7 +1,21 @@
 package database
 
-import "database/sql"
+import (
+	"os"
+	"path/filepath"
+)
 
-func Migrate(db *sql.DB) error {
-	return nil
+func Migrate(store *Store) error {
+	if store == nil {
+		return nil
+	}
+
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
+	if store.path == "" {
+		store.path = "./data/lakenet.db"
+	}
+
+	return os.MkdirAll(filepath.Dir(store.path), 0o755)
 }
