@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -215,14 +214,4 @@ func userIDFromToken(r *http.Request) int {
 		return int(uid)
 	}
 	return 0
-}
-
-// bearerToken extracts the raw token string from an Authorization: Bearer header.
-func bearerToken(r *http.Request) string {
-	const prefix = "Bearer "
-	value := strings.TrimSpace(r.Header.Get("Authorization"))
-	if len(value) >= len(prefix) && strings.EqualFold(value[:len(prefix)], prefix) {
-		return strings.TrimSpace(value[len(prefix):])
-	}
-	return ""
 }
