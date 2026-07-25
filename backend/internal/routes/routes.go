@@ -17,6 +17,13 @@ func Setup(store *database.Store, cfg config.Config) http.Handler {
 	satelliteHandler := handlers.NewSatelliteHandler(store, cfg)
 	recommendationHandler := handlers.NewRecommendationHandler(store, cfg)
 	smsHandler := handlers.NewSMSHandler(store, cfg)
+	authHandler := handlers.NewAuthHandler(store)
+
+	// Auth routes (public, no JWT required)
+	mux.HandleFunc("POST /api/auth/register", authHandler.Register)
+	mux.HandleFunc("POST /api/auth/login", authHandler.Login)
+	mux.HandleFunc("GET /api/auth/user", authHandler.GetUser)
+	mux.HandleFunc("POST /api/auth/logout", authHandler.Logout)
 
 	mux.HandleFunc("GET /api/health", healthHandler.Get)
 	mux.HandleFunc("GET /api/farms", farmHandler.List)
