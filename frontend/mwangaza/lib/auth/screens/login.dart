@@ -42,9 +42,14 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (mounted) {
+        // Use the user data
+        print('✅ Login successful!');
+        print('👤 User: ${user.email}');
+        print('🆔 User ID: ${user.id}');
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login successful!'),
+          SnackBar(
+            content: Text('Welcome back, ${user.email ?? 'User'}!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -58,7 +63,10 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Login failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
