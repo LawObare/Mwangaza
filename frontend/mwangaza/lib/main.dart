@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mwangaza/auth/screen/signup.dart';
+import 'package:mwangaza/auth/screens/signup.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Mwangaza',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         // This is the theme of your application.
@@ -36,4 +36,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

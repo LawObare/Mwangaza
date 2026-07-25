@@ -92,7 +92,7 @@ func (h *FarmHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snapshot, err := satellite.FetchAndStore(h.Store, h.Config, created)
+	snapshot, err := satellite.FetchAndStore(h.Store, h.Config, created, bearerToken(r))
 	if err == nil {
 		rec := recommendation.GenerateRecommendation(created, snapshot)
 		if _, recErr := h.Store.AddRecommendation(rec); recErr == nil {

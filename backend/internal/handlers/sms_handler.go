@@ -55,10 +55,10 @@ func (h *SMSHandler) Send(w http.ResponseWriter, r *http.Request) {
 
 	message := req.Message
 	if message == "" && found {
-		if rec, ok := h.Store.LatestRecommendationForFarm(farm.ID); ok {
-			message = rec.Message
+		if batch := h.Store.LatestRecommendationBatchForFarm(farm.ID); len(batch) > 0 {
+			message = batch[0].Message
 		} else {
-			recs, _, err := recommendation.GenerateForFarm(h.Store, h.Config, farm)
+			recs, _, err := recommendation.GenerateForFarmWithToken(h.Store, h.Config, farm, bearerToken(r))
 			if err == nil && len(recs) > 0 {
 				message = recs[0].Message
 			}

@@ -16,10 +16,10 @@ import (
 type Store struct {
 	mu                   sync.RWMutex
 	path                 string
-	Farms                []models.Farm            `json:"farms"`
-	SatelliteData        []models.SatelliteData    `json:"satellite_data"`
-	Recommendations      []models.Recommendation   `json:"recommendations"`
-	SMSLogs              []models.SmsMessage       `json:"sms_logs"`
+	Farms                []models.Farm           `json:"farms"`
+	SatelliteData        []models.SatelliteData  `json:"satellite_data"`
+	Recommendations      []models.Recommendation `json:"recommendations"`
+	SMSLogs              []models.SmsMessage     `json:"sms_logs"`
 	nextFarmID           int
 	nextSatelliteID      int
 	nextRecommendationID int
@@ -270,6 +270,45 @@ func (s *Store) LatestRecommendationForFarm(farmID int) (models.Recommendation, 
 		}
 	}
 	return latest, found
+}
+
+// LatestRecommendationBatchForFarm returns every recommendation generated in
+// the farm's most recent evaluation, ordered from most to least urgent.
+func (s *Store) LatestRecommendationBatchForFarm(farmID int) []models.Recommendation {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	latest := ""
+	for _, item := range s.Recommendations {
+		if item.FarmID == farmID && item.CreatedAt > latest {
+			latest = item.CreatedAt
+		}
+	}
+	if latest == "" {
+		return nil
+	}
+
+	batch := make([]models.Recommendation, 0)
+	for _, item := range s.Recommendations {
+		if item.FarmID == farmID && item.CreatedAt == latest {
+			batch = append(batch, item)
+		}
+	}
+	sort.SliceStable(batch, func(i, j int) bool {
+		return recommendationPriority(batch[i].Priority) > recommendationPriority(batch[j].Priority)
+	})
+	return batch
+}
+
+func recommendationPriority(priority string) int {
+	switch strings.ToUpper(strings.TrimSpace(priority)) {
+	case "HIGH":
+		return 3
+	case "MEDIUM":
+		return 2
+	default:
+		return 1
+	}
 }
 
 func (s *Store) AddRecommendation(rec models.Recommendation) (models.Recommendation, error) {

@@ -8,11 +8,13 @@ import (
 )
 
 type Config struct {
-	Port                  string
-	DatabasePath          string
-	UseMockData           bool
-	SpaceIoTBoxAPIKey     string
-	SpaceIoTBoxBaseURL    string
+	Port         string
+	DatabasePath string
+	UseMockData  bool
+	// KijaniDataURL is the exact Kijani endpoint that returns farm
+	// environmental data. Its resource path is supplied by the Kijani contract.
+	KijaniDataURL         string
+	KijaniAPIKey          string
 	SMSAPIKey             string
 	SMSUsername           string
 	SMSSenderID           string
@@ -29,11 +31,11 @@ func Load() Config {
 		Port:                  getEnv("PORT", "8080"),
 		DatabasePath:          getEnv("DATABASE_PATH", "./data/lakenet.db"),
 		UseMockData:           parseBool(getEnv("USE_MOCK_DATA", "true")),
-		SpaceIoTBoxAPIKey:     getEnv("SPACEIOTBOX_API_KEY", ""),
-		SpaceIoTBoxBaseURL:    getEnv("SPACEIOTBOX_BASE_URL", ""),
+		KijaniDataURL:         getEnv("KIJANI_DATA_URL", ""),
+		KijaniAPIKey:          getEnv("KIJANI_API_KEY", ""),
 		SMSAPIKey:             getEnv("SMS_API_KEY", ""),
 		SMSUsername:           getEnv("SMS_USERNAME", "sandbox"),
-		SMSSenderID:           getEnv("SMS_SENDER_ID", "Mwangaza"),
+		SMSSenderID:           getEnv("SMS_SENDER_ID", ""),
 		DefaultLanguage:       getEnv("DEFAULT_LANGUAGE", "English"),
 		AutoAlertsEnabled:     parseBool(getEnv("AUTO_ALERTS_ENABLED", "false")),
 		AutoAlertsInterval:    parseDuration(getEnv("AUTO_ALERTS_INTERVAL", "15m"), 15*time.Minute),

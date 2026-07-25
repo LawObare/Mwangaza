@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"mwangaza/internal/config"
 	"mwangaza/internal/database"
@@ -29,7 +30,7 @@ func (h *SatelliteHandler) Get(w http.ResponseWriter, r *http.Request) {
 			utils.Error(w, http.StatusNotFound, "farm not found")
 			return
 		}
-		data, err := satellite.FetchAndStore(h.Store, h.Config, farm)
+		data, err := satellite.FetchAndStore(h.Store, h.Config, farm, bearerToken(r))
 		if err != nil {
 			utils.Error(w, http.StatusInternalServerError, err.Error())
 			return
@@ -45,7 +46,7 @@ func (h *SatelliteHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	farms := h.Store.ListFarms()
 	if len(farms) > 0 {
-		data, err := satellite.FetchAndStore(h.Store, h.Config, farms[0])
+		data, err := satellite.FetchAndStore(h.Store, h.Config, farms[0], bearerToken(r))
 		if err != nil {
 			utils.Error(w, http.StatusInternalServerError, err.Error())
 			return
@@ -55,4 +56,15 @@ func (h *SatelliteHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.Success(w, satellite.MockForFarm(models.Farm{Crop: "Maize"}))
+}
+
+// bearerToken returns the Kijani token supplied by the authenticated Flutter
+// client. The token is forwarded only to Kijani; it is never stored locally.
+func bearerToken(r *http.Request) string {
+	const prefix = "Bearer "
+	value := strings.TrimSpace(r.Header.Get("Authorization"))
+	if len(value) >= len(prefix) && strings.EqualFold(value[:len(prefix)], prefix) {
+		return strings.TrimSpace(value[len(prefix):])
+	}
+	return ""
 }

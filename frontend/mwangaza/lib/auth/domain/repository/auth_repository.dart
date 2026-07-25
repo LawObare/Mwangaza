@@ -11,7 +11,7 @@ class AuthRemoteRepository {
   AuthRemoteRepository() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: BackendUri.kijanibackendUri,
+        baseUrl: BackendUri.kijaniApiUri,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -45,7 +45,7 @@ class AuthRemoteRepository {
   }) async {
     try {
       final response = await _dio.post(
-        '/auth/register',
+        'auth/register',
         data: {
           //'name': name,
           'email': email,
@@ -55,18 +55,7 @@ class AuthRemoteRepository {
 
       final responseData = Map<String, dynamic>.from(response.data);
 
-      if (responseData['token'] != null) {
-        await spService.setToken(responseData['token'].toString());
-      }
-
-      final userMap = Map<String, dynamic>.from(responseData['user'] ?? {});
-
-      final userData = {
-        ...userMap,
-        'token': responseData['token']?.toString() ?? '',
-      };
-
-      return UserModel.fromMap(userData);
+      return UserModel.fromMap(responseData);
     } on DioException catch (e) {
       if (e.response != null) {
         if (e.response?.statusCode == 422) {
@@ -81,7 +70,7 @@ class AuthRemoteRepository {
           }
         }
 
-        final message = e.response?.data['message'];
+        final message = e.response?.data['detail'] ?? e.response?.data['message'];
         throw message?.toString() ?? 'Registration failed';
       } else {
         throw e.message ?? 'Network error occurred';
@@ -97,27 +86,26 @@ class AuthRemoteRepository {
   }) async {
     try {
       final response = await _dio.post(
-        '/auth/login',
+        'auth/login',
         data: {'email': email, 'password': password},
       );
 
       final responseData = Map<String, dynamic>.from(response.data);
 
-      if (responseData['token'] != null) {
-        await spService.setToken(responseData['token'].toString());
+      final accessToken = responseData['access_token']?.toString();
+      final refreshToken = responseData['refresh_token']?.toString();
+      if (accessToken == null || refreshToken == null) {
+        throw 'Kijani returned an invalid login response';
       }
+      await spService.setToken(accessToken);
+      await spService.setRefreshToken(refreshToken);
 
-      final userMap = Map<String, dynamic>.from(responseData['user'] ?? {});
-
-      final userData = {
-        ...userMap,
-        'token': responseData['token']?.toString() ?? '',
-      };
-
+      final userResponse = await _dio.get('auth/me');
+      final userData = Map<String, dynamic>.from(userResponse.data)..['token'] = accessToken;
       return UserModel.fromMap(userData);
     } on DioException catch (e) {
       if (e.response != null) {
-        final message = e.response?.data['message'];
+        final message = e.response?.data['detail'] ?? e.response?.data['message'];
         throw message?.toString() ?? 'Login failed';
       } else {
         throw e.message ?? 'Network error occurred';
@@ -134,7 +122,7 @@ class AuthRemoteRepository {
         return null;
       }
 
-      final response = await _dio.get('/auth/user');
+      final response = await _dio.get('auth/me');
 
       final responseData = Map<String, dynamic>.from(response.data);
 
@@ -154,10 +142,13 @@ class AuthRemoteRepository {
 
   Future<void> logout() async {
     try {
-      await _dio.post('/auth/logout');
+      final refreshToken = await spService.getRefreshToken();
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await _dio.post('auth/logout', data: {'refresh_token': refreshToken});
+      }
     } finally {
       // Always clear local token
-      await spService.setToken('');
+      await spService.clearAll();
       refreshDio();
     }
   }
