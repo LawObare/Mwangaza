@@ -28,8 +28,16 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) {
+      print('❌ Form validation failed');
       return;
     }
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    print('🔐 Attempting login with:');
+    print('📧 Email: $email');
+    print('🔑 Password: ${'*' * password.length}');
 
     setState(() {
       _isLoading = true;
@@ -37,30 +45,30 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final user = await _authRepo.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+        email: email,
+        password: password,
       );
 
+      print('✅ Login successful!');
+      print('👤 User: ${user.email}');
+      print('🎫 Token: ${user.token?.substring(0, min(20, user.token?.length ?? 0))}...');
+
       if (mounted) {
-        // Use the user data
-        print('✅ Login successful!');
-        print('👤 User: ${user.email}');
-        print('🆔 User ID: ${user.id}');
-        
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Welcome back, ${user.email ?? 'User'}!'),
+          const SnackBar(
+            content: Text('Login successful!'),
             backgroundColor: Colors.green,
           ),
         );
 
-        // Navigate to HomeScreen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       }
     } catch (e) {
+      print('❌ Login failed with error: $e');
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
