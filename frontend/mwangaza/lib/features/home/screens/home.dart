@@ -4,8 +4,8 @@ import 'package:mwangaza/auth/screens/login.dart';
 import '../widget/animated_sidebar.dart';
 import '../views/dashboard_view.dart';
 import '../views/map_view.dart';
-import '../views/notification_view.dart';
 import '../views/insight_view.dart';
+import '../../farms/views/add_farm_view.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,16 +22,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Map<String, dynamic>> _menuItems = [
     {'title': 'Dashboard', 'icon': Icons.dashboard},
+    {'title': 'Add Farm', 'icon': Icons.add_location_alt_outlined},
     {'title': 'Map', 'icon': Icons.map},
-    {'title': 'Notification', 'icon': Icons.notifications},
     {'title': 'Insight', 'icon': Icons.insights},
     {'title': 'Logout', 'icon': Icons.logout},
   ];
 
   final List<Widget> _views = [
     const DashboardView(),
+    const AddFarmView(),
     const MapView(),
-    //const NotificationView(),
     const InsightView(),
   ];
 
