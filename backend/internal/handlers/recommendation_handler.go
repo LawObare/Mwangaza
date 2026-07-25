@@ -1,20 +1,77 @@
 package handlers
 
 import (
-	"github.com/gin-gonic/gin"
+	"net/http"
+
+	"mwangaza/internal/config"
+	"mwangaza/internal/database"
 	"mwangaza/internal/models"
+	"mwangaza/internal/services/recommendation"
+	"mwangaza/internal/utils"
 )
 
-// GetRecommendations  godoc
-// @Summary           Get recommendations
-// @Description       Returns all recommendations, optionally filtered by farm_id
-// @Tags              recommendations
-// @Produce           json
-// @Param             farm_id  query     int  false  "Filter by farm ID"
-// @Security          BearerAuth
-// @Success           200  {object}  []models.Recommendation
-// @Failure           401  {object}  map[string]interface{}
-// @Router            /recommendation [get]
-func GetRecommendations(c *gin.Context) {
-	c.JSON(200, []models.Recommendation{})
+type RecommendationHandler struct {
+	Store  *database.Store
+	Config config.Config
+}
+
+func NewRecommendationHandler(store *database.Store, cfg config.Config) *RecommendationHandler {
+	return &RecommendationHandler{Store: store, Config: cfg}
+}
+
+func (h *RecommendationHandler) List(w http.ResponseWriter, r *http.Request) {
+	farmID, ok, err := parseQueryFarmID(r.URL.Query().Get("farm_id"))
+	if err != nil {
+		utils.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var filter *int
+	if ok {
+		filter = &farmID
+	}
+
+	utils.Success(w, h.Store.ListRecommendations(filter))
+}
+
+func (h *RecommendationHandler) Generate(w http.ResponseWriter, r *http.Request) {
+	farmID, ok, err := parseQueryFarmID(r.URL.Query().Get("farm_id"))
+	if err != nil {
+		utils.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if ok {
+		farm, found := h.Store.GetFarm(farmID)
+		if !found {
+			utils.Error(w, http.StatusNotFound, "farm not found")
+			return
+		}
+
+		rec, _, err := recommendation.GenerateForFarm(h.Store, h.Config, farm)
+		if err != nil {
+			utils.Error(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		utils.Created(w, rec)
+		return
+	}
+
+	farms := h.Store.ListFarms()
+	if len(farms) == 0 {
+		utils.Error(w, http.StatusNotFound, "no farms available")
+		return
+	}
+
+	result := make([]models.Recommendation, 0, len(farms))
+	for _, farm := range farms {
+		recs, _, err := recommendation.GenerateForFarm(h.Store, h.Config, farm)
+		if err != nil {
+			continue
+		}
+		result = append(result, recs...)
+	}
+
+	utils.Created(w, result)
 }

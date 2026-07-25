@@ -1,42 +1,32 @@
 package routes
 
 import (
-	"database/sql"
+	"net/http"
 
-	"github.com/gin-gonic/gin"
-	ginSwagger "github.com/swaggo/gin-swagger"
-	swaggerFiles "github.com/swaggo/files"
-
+	"mwangaza/internal/config"
+	"mwangaza/internal/database"
 	"mwangaza/internal/handlers"
 	"mwangaza/internal/middleware"
-	"mwangaza/internal/services/auth"
 )
 
-func Setup(db *sql.DB) *gin.Engine {
-	r := gin.New()
-	r.Use(middleware.CORS())
+func Setup(store *database.Store, cfg config.Config) http.Handler {
+	mux := http.NewServeMux()
 
-	// Initialize auth service
-	authRepo := auth.NewSQLiteRepository(db)
-	handlers.InitAuthService(authRepo)
+	healthHandler := handlers.NewHealthHandler(cfg)
+	farmHandler := handlers.NewFarmHandler(store, cfg)
+	satelliteHandler := handlers.NewSatelliteHandler(store, cfg)
+	recommendationHandler := handlers.NewRecommendationHandler(store, cfg)
+	smsHandler := handlers.NewSMSHandler(store, cfg)
 
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	r.GET("/api/health", handlers.HealthCheck)
+	mux.HandleFunc("GET /api/health", healthHandler.Get)
+	mux.HandleFunc("GET /api/farms", farmHandler.List)
+	mux.HandleFunc("POST /api/farms", farmHandler.Create)
+	mux.HandleFunc("GET /api/farms/{id}", farmHandler.Get)
+	mux.HandleFunc("GET /api/satellite", satelliteHandler.Get)
+	mux.HandleFunc("GET /api/recommendation", recommendationHandler.List)
+	mux.HandleFunc("POST /api/recommendation", recommendationHandler.Generate)
+	mux.HandleFunc("GET /api/sms", smsHandler.List)
+	mux.HandleFunc("POST /api/sms/send", smsHandler.Send)
 
-	api := r.Group("/api")
-	api.POST("/auth/register", handlers.Register)
-	api.POST("/auth/login", handlers.Login)
-
-	protected := api.Group("")
-	protected.Use(middleware.Auth())
-	{
-		protected.GET("/farms", handlers.ListFarms)
-		protected.GET("/farms/:id", handlers.GetFarm)
-		protected.GET("/satellite", handlers.GetSatelliteData)
-		protected.GET("/recommendation", handlers.GetRecommendations)
-		protected.GET("/sms", handlers.GetSMSHistory)
-		protected.POST("/sms/send", handlers.SendSMS)
-	}
-
-	return r
+	return middleware.CORS(mux)
 }

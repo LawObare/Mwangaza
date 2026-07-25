@@ -23,13 +23,6 @@ Returns the latest satellite environmental data (soil moisture, temperature, rai
 ### GET /api/recommendation
 Returns all recommendations. Supports `?farm_id=` query parameter for filtering.
 
-### POST /api/recommendation
-Generates and stores the current recommendation alerts. With `?farm_id=`, the
-response `data` is an array of that farm's alerts. Without it, `data` is an
-object keyed by farm ID, with one alert array per farm. Recommendation objects
-include `confidence` (`HIGH`, `MEDIUM`, or `LOW`) and use the farm's preferred
-English or Swahili language.
-
 ### GET /api/sms
 Returns SMS send history.
 
