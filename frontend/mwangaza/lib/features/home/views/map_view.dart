@@ -18,7 +18,7 @@ class _MapViewState extends State<MapView> {
   // Default view: Nyanza region, Kenya (near Kisumu).
   LatLng _currentPosition = const LatLng(-0.0917, 34.7680);
 
-  double _zoom = 9;
+  double _zoom = 16;
 
   // --- Field drawing state ---
   bool _isDrawing = false;
