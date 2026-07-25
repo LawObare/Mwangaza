@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"mwangaza/internal/config"
 	"mwangaza/internal/database"
@@ -48,7 +49,7 @@ func (h *RecommendationHandler) Generate(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		rec, _, err := recommendation.GenerateForFarm(h.Store, h.Config, farm)
+		rec, _, err := recommendation.GenerateForFarmWithToken(h.Store, h.Config, farm, bearerToken(r))
 		if err != nil {
 			utils.Error(w, http.StatusInternalServerError, err.Error())
 			return
@@ -64,13 +65,13 @@ func (h *RecommendationHandler) Generate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	result := make([]models.Recommendation, 0, len(farms))
+	result := make(map[string][]models.Recommendation, len(farms))
 	for _, farm := range farms {
-		rec, _, err := recommendation.GenerateForFarm(h.Store, h.Config, farm)
+		recs, _, err := recommendation.GenerateForFarmWithToken(h.Store, h.Config, farm, bearerToken(r))
 		if err != nil {
 			continue
 		}
-		result = append(result, rec)
+		result[strconv.Itoa(farm.ID)] = recs
 	}
 
 	utils.Created(w, result)

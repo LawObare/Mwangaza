@@ -15,12 +15,14 @@ import (
 	"mwangaza/internal/models"
 )
 
-func FetchForFarm(ctx context.Context, cfg config.Config, farm models.Farm) (models.SatelliteData, error) {
-	if cfg.UseMockData || strings.TrimSpace(cfg.SpaceIoTBoxBaseURL) == "" {
+var httpClient = http.DefaultClient
+
+func FetchForFarm(ctx context.Context, cfg config.Config, farm models.Farm, accessToken string) (models.SatelliteData, error) {
+	if cfg.UseMockData || strings.TrimSpace(cfg.KijaniDataURL) == "" {
 		return MockForFarm(farm), nil
 	}
 
-	endpoint, err := buildEndpoint(cfg.SpaceIoTBoxBaseURL, farm)
+	endpoint, err := buildEndpoint(cfg.KijaniDataURL, farm)
 	if err != nil {
 		return MockForFarm(farm), nil
 	}
@@ -30,12 +32,13 @@ func FetchForFarm(ctx context.Context, cfg config.Config, farm models.Farm) (mod
 		return MockForFarm(farm), nil
 	}
 
-	if cfg.SpaceIoTBoxAPIKey != "" {
-		req.Header.Set("Authorization", "Bearer "+cfg.SpaceIoTBoxAPIKey)
-		req.Header.Set("X-API-Key", cfg.SpaceIoTBoxAPIKey)
+	if accessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+	} else if cfg.KijaniAPIKey != "" {
+		req.Header.Set("X-API-Key", cfg.KijaniAPIKey)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return MockForFarm(farm), nil
 	}
@@ -56,14 +59,14 @@ func FetchForFarm(ctx context.Context, cfg config.Config, farm models.Farm) (mod
 		data.Timestamp = time.Now().UTC().Format(time.RFC3339)
 	}
 	if data.Source == "" {
-		data.Source = "spaceiotbox"
+		data.Source = "kijani"
 	}
 
 	return data, nil
 }
 
-func FetchAndStore(store *database.Store, cfg config.Config, farm models.Farm) (models.SatelliteData, error) {
-	data, err := FetchForFarm(context.Background(), cfg, farm)
+func FetchAndStore(store *database.Store, cfg config.Config, farm models.Farm, accessToken string) (models.SatelliteData, error) {
+	data, err := FetchForFarm(context.Background(), cfg, farm, accessToken)
 	if err != nil {
 		return models.SatelliteData{}, err
 	}
@@ -77,6 +80,12 @@ func FetchAndStore(store *database.Store, cfg config.Config, farm models.Farm) (
 }
 
 func ParseResponse(raw any) models.SatelliteData {
+	if root, ok := raw.(map[string]any); ok {
+		if _, ok := root["forecast_data"].(map[string]any); ok {
+			return parseKijaniAgroClimate(root)
+		}
+	}
+
 	payload := unwrapMap(raw)
 
 	return models.SatelliteData{
@@ -88,6 +97,79 @@ func ParseResponse(raw any) models.SatelliteData {
 		Source:          stringValue(payload, "source", "provider"),
 		Timestamp:       stringValue(payload, "timestamp", "recorded_at", "recordedAt"),
 	}
+}
+
+// parseKijaniAgroClimate converts Kijani's hourly five-day forecast into the
+// single risk snapshot used by Mwangaza's recommendation rules. We assess the
+// first 24 forecast hours: maximum heat/rain/wind, minimum soil moisture, and
+// the latest satellite-derived NDVI.
+func parseKijaniAgroClimate(payload map[string]any) models.SatelliteData {
+	forecast, _ := payload["forecast_data"].(map[string]any)
+	data, _ := payload["data"].(map[string]any)
+	vegetation, _ := data["vegetation_indices"].(map[string]any)
+
+	return models.SatelliteData{
+		SoilMoisture:    minForecastValue(forecast, "soilmoisture_0to10cm"),
+		Temperature:     maxForecastValue(forecast, "temperature"),
+		RainProbability: maxForecastValue(forecast, "precipitation_probability"),
+		NDVI:            floatValue(vegetation, "NDVI", "ndvi"),
+		WindSpeed:       maxForecastValue(forecast, "windspeed", "wind_speed"),
+		Source:          stringValue(payload, "source"),
+		Timestamp:       firstForecastTime(forecast),
+	}
+}
+
+func forecastWindow(payload map[string]any, key string) []float64 {
+	values, ok := payload[key].([]any)
+	if !ok {
+		return nil
+	}
+	limit := len(values)
+	if limit > 24 {
+		limit = 24
+	}
+	result := make([]float64, 0, limit)
+	for _, value := range values[:limit] {
+		if number, ok := numericValue(value); ok {
+			result = append(result, number)
+		}
+	}
+	return result
+}
+
+func maxForecastValue(payload map[string]any, keys ...string) float64 {
+	var max float64
+	found := false
+	for _, key := range keys {
+		for _, value := range forecastWindow(payload, key) {
+			if !found || value > max {
+				max, found = value, true
+			}
+		}
+	}
+	return max
+}
+
+func minForecastValue(payload map[string]any, keys ...string) float64 {
+	var min float64
+	found := false
+	for _, key := range keys {
+		for _, value := range forecastWindow(payload, key) {
+			if !found || value < min {
+				min, found = value, true
+			}
+		}
+	}
+	return min
+}
+
+func firstForecastTime(payload map[string]any) string {
+	values, ok := payload["time"].([]any)
+	if !ok || len(values) == 0 {
+		return ""
+	}
+	value, _ := values[0].(string)
+	return value
 }
 
 func MockForFarm(farm models.Farm) models.SatelliteData {
@@ -164,18 +246,11 @@ func buildEndpoint(base string, farm models.Farm) (string, error) {
 	}
 
 	query := parsed.Query()
-	if farm.ID > 0 {
-		query.Set("farm_id", strconv.Itoa(farm.ID))
-	}
-	if farm.Latitude != 0 {
-		query.Set("latitude", fmt.Sprintf("%.6f", farm.Latitude))
-	}
-	if farm.Longitude != 0 {
-		query.Set("longitude", fmt.Sprintf("%.6f", farm.Longitude))
-	}
-	if farm.Crop != "" {
-		query.Set("crop", farm.Crop)
-	}
+	// Kijani's published agro-climate endpoint requires WGS84 `lat` and
+	// `lon`. Farm ID and crop remain local Mwangaza metadata; they are not
+	// query parameters in Kijani's API contract.
+	query.Set("lat", fmt.Sprintf("%.6f", farm.Latitude))
+	query.Set("lon", fmt.Sprintf("%.6f", farm.Longitude))
 	parsed.RawQuery = query.Encode()
 	return parsed.String(), nil
 }
@@ -193,27 +268,33 @@ func unwrapMap(raw any) map[string]any {
 func floatValue(payload map[string]any, keys ...string) float64 {
 	for _, key := range keys {
 		if value, ok := payload[key]; ok {
-			switch typed := value.(type) {
-			case float64:
-				return typed
-			case int:
-				return float64(typed)
-			case int32:
-				return float64(typed)
-			case int64:
-				return float64(typed)
-			case json.Number:
-				if parsed, err := typed.Float64(); err == nil {
-					return parsed
-				}
-			case string:
-				if parsed, err := strconv.ParseFloat(strings.TrimSpace(typed), 64); err == nil {
-					return parsed
-				}
+			if parsed, ok := numericValue(value); ok {
+				return parsed
 			}
 		}
 	}
 	return 0
+}
+
+func numericValue(value any) (float64, bool) {
+	switch typed := value.(type) {
+	case float64:
+		return typed, true
+	case int:
+		return float64(typed), true
+	case int32:
+		return float64(typed), true
+	case int64:
+		return float64(typed), true
+	case json.Number:
+		parsed, err := typed.Float64()
+		return parsed, err == nil
+	case string:
+		parsed, err := strconv.ParseFloat(strings.TrimSpace(typed), 64)
+		return parsed, err == nil
+	default:
+		return 0, false
+	}
 }
 
 func stringValue(payload map[string]any, keys ...string) string {
