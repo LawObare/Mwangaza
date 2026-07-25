@@ -90,7 +90,7 @@ class _SignUpPageState extends State<SignUpPage> {
                               ),
                               child: const Center(
                                 child: Text(
-                                  'BLJ',
+                                  'IBM',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
