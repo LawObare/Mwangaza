@@ -4,7 +4,12 @@ class SpService {
   static const String _tokenKey = 'auth_token';
   static const String _refreshTokenKey = 'refresh_token';
 
-  final SharedPreferencesAsync _prefs = SharedPreferencesAsync();
+  // Created on first use: constructing SharedPreferencesAsync before the
+  // platform plugin is registered (widget tests, unsupported platforms)
+  // throws "The SharedPreferencesAsyncPlatform instance must be set."
+  SharedPreferencesAsync? _asyncPrefs;
+
+  SharedPreferencesAsync get _prefs => _asyncPrefs ??= SharedPreferencesAsync();
 
   // Token methods
   Future<void> setToken(String token) async {

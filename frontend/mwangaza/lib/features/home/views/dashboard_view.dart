@@ -87,7 +87,7 @@ class DashboardView extends StatelessWidget {
                       leading: CircleAvatar(
                         backgroundColor: Colors
                             .primaries[index % Colors.primaries.length]
-                            .withOpacity(0.2),
+                            .withValues(alpha: 0.2),
                         child: Text(
                           '${index + 1}',
                           style: TextStyle(
@@ -129,7 +129,7 @@ class DashboardView extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(icon, color: color, size: 20),

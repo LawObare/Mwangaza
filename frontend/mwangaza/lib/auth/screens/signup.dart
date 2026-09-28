@@ -49,7 +49,7 @@ class _SignUpPageState extends State<SignUpPage> {
     });
 
     try {
-      final user = await _authRepo.signUp(
+      await _authRepo.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -437,8 +437,9 @@ class _SignUpPageState extends State<SignUpPage> {
                         const SizedBox(height: 24),
 
                         // Sign In Link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Text(
                               'Already have an account? ',

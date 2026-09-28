@@ -100,7 +100,7 @@ class InsightView extends StatelessWidget {
                     leading: CircleAvatar(
                       backgroundColor: Colors
                           .primaries[index % Colors.primaries.length]
-                          .withOpacity(0.1),
+                          .withValues(alpha: 0.1),
                       child: Icon(
                         Icons.lightbulb,
                         color:
@@ -150,7 +150,7 @@ class InsightView extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Icon(icon, color: color, size: 16),
@@ -163,8 +163,8 @@ class InsightView extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: change.startsWith('+')
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1),
+                          ? Colors.green.withValues(alpha: 0.1)
+                          : Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(

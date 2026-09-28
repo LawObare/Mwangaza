@@ -64,7 +64,9 @@ class _MapViewState extends State<MapView> {
       // doesn't hang forever with no feedback.
       final position =
           await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high,
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+            ),
           ).timeout(
             const Duration(seconds: 10),
             onTimeout: () => throw 'Timed out waiting for your location.',
@@ -201,7 +203,7 @@ class _MapViewState extends State<MapView> {
                   polygons: [
                     Polygon(
                       points: _fieldPoints,
-                      color: Colors.green.withOpacity(0.3),
+                      color: Colors.green.withValues(alpha: 0.3),
                       borderColor: Colors.green,
                       borderStrokeWidth: 3,
                     ),

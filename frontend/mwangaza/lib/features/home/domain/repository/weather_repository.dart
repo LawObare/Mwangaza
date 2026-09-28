@@ -10,7 +10,7 @@ class WeatherRepository {
   WeatherRepository() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: BackendUri.kijanibackendUri,
+        baseUrl: BackendUri.kijaniApiUri,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

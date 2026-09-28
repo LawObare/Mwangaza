@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:mwangaza/auth/domain/repository/auth_repository.dart';
 import 'package:mwangaza/features/home/screens/home.dart';
@@ -51,7 +53,7 @@ class _LoginPageState extends State<LoginPage> {
 
       print('✅ Login successful!');
       print('👤 User: ${user.email}');
-      print('🎫 Token: ${user.token?.substring(0, min(20, user.token?.length ?? 0))}...');
+      print('🎫 Token: ${user.token?.substring(0, math.min(20, user.token?.length ?? 0))}...');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -245,41 +247,47 @@ class _LoginPageState extends State<LoginPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: Checkbox(
-                                    value: _rememberMe,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _rememberMe = value!;
-                                      });
-                                    },
-                                    activeColor: const Color(0xFF0F62FE),
+                            Flexible(
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: Checkbox(
+                                      value: _rememberMe,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _rememberMe = value!;
+                                        });
+                                      },
+                                      activeColor: const Color(0xFF0F62FE),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Remember me',
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      'Remember me',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Flexible(
+                              child: GestureDetector(
+                                onTap: () {
+                                  // Navigate to forgot password
+                                },
+                                child: Text(
+                                  'Forgot Password?',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.grey[600],
+                                    color: const Color(0xFF0F62FE),
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                ),
-                              ],
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                // Navigate to forgot password
-                              },
-                              child: Text(
-                                'Forgot Password?',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: const Color(0xFF0F62FE),
-                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
@@ -407,8 +415,9 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: 24),
 
                         // Sign Up Link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Text(
                               "Don't have an account? ",
