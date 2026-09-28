@@ -1,0 +1,14 @@
+# Only the pre-built web bundle and the nginx config are needed in the
+# context; keep the multi-hundred-MB tool caches out of it.
+.dart_tool/
+build/test_cache/
+build/*.dill
+build/*.dill.track.dill
+android/
+ios/
+linux/
+macos/
+windows/
+test/
+.pub-cache/
+.git/

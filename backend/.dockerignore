@@ -1,0 +1,14 @@
+# Secrets and local state must never enter the image build context.
+.env
+data/
+*.db
+*.db-*
+
+# VCS / docs / build tooling
+.git/
+docs/
+README.md
+
+# Local build artifacts
+mwangaza-api
+/cmd/mwangaza-api

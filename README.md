@@ -26,3 +26,28 @@ at the backend that device can reach:
 ```
 flutter run --dart-define=MWANGAZA_API_URL=http://localhost:8080/api
 ```
+
+## Run with Docker
+
+Build the Flutter web bundle first — this bakes the backend URL into the app:
+
+```bash
+cd frontend/mwangaza
+flutter build web --dart-define=MWANGAZA_API_URL=http://localhost:8080/api
+cd ../..
+```
+
+Then start the whole stack:
+
+```bash
+docker compose up --build
+```
+
+- Backend: `http://localhost:8080` (health: `/api/health`)
+- Frontend: `http://localhost:8000`
+
+Configuration is read from `backend/.env` (copy `backend/.env.example` to
+`backend/.env` first if needed). The demo store persists in the `backend-data`
+named volume; the API key is never baked into the image — `.env` is excluded
+from the build context. Stop everything with `docker compose down` (add `-v`
+to also reset the stored data).

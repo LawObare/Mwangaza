@@ -1,0 +1,54 @@
+# Mwangaza — backend (Go API) + frontend (Flutter web via nginx).
+#
+# Prerequisite: build the Flutter web bundle first (bakes the API URL into it):
+#   cd frontend/mwangaza && flutter build web --dart-define=MWANGAZA_API_URL=http://localhost:8080/api
+#
+# Then: docker compose up --build
+#   backend  -> http://localhost:8080
+#   frontend -> http://localhost:8000
+
+services:
+  backend:
+    build:
+      context: ./backend
+    image: mwangaza-backend:latest
+    container_name: mwangaza-backend
+    ports:
+      - "8080:8080"
+    # Runtime config comes from backend/.env (WEATHER_DATA_URL, WEATHER_API_KEY,
+    # USE_MOCK_DATA, SMS_*, ...). Values below override the file where they collide.
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: "8080"
+      DATABASE_PATH: /data/lakenet.db
+    volumes:
+      - backend-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend/mwangaza
+    image: mwangaza-frontend:latest
+    container_name: mwangaza-frontend
+    ports:
+      - "8000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  backend-data:
