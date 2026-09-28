@@ -11,10 +11,11 @@ type Config struct {
 	Port         string
 	DatabasePath string
 	UseMockData  bool
-	// KijaniDataURL is the exact Kijani endpoint that returns farm
-	// environmental data. Its resource path is supplied by the Kijani contract.
-	KijaniDataURL         string
-	KijaniAPIKey          string
+	// WeatherDataURL is the exact weather endpoint that returns farm
+	// environmental data (OpenWeatherMap or Kijani). Its resource path is
+	// supplied by the provider's contract.
+	WeatherDataURL        string
+	WeatherAPIKey         string
 	JWTSecret             string
 	SMSAPIKey             string
 	SMSUsername           string
@@ -33,11 +34,12 @@ func Load() Config {
 	_ = loadDotEnvFiles(".env", "backend/.env")
 
 	return Config{
-		Port:                  getEnv("PORT", "8080"),
-		DatabasePath:          getEnv("DATABASE_PATH", "./data/lakenet.db"),
-		UseMockData:           parseBool(getEnv("USE_MOCK_DATA", "true")),
-		KijaniDataURL:         getEnv("KIJANI_DATA_URL", ""),
-		KijaniAPIKey:          getEnv("KIJANI_API_KEY", ""),
+		Port:         getEnv("PORT", "8080"),
+		DatabasePath: getEnv("DATABASE_PATH", "./data/lakenet.db"),
+		UseMockData:  parseBool(getEnv("USE_MOCK_DATA", "true")),
+		// KIJANI_* remain accepted as legacy aliases for WEATHER_*.
+		WeatherDataURL:        getEnv("WEATHER_DATA_URL", getEnv("KIJANI_DATA_URL", "")),
+		WeatherAPIKey:         getEnv("WEATHER_API_KEY", getEnv("KIJANI_API_KEY", "")),
 		JWTSecret:             getEnv("JWT_SECRET", DevJWTSecret),
 		SMSAPIKey:             getEnv("SMS_API_KEY", ""),
 		SMSUsername:           getEnv("SMS_USERNAME", "sandbox"),

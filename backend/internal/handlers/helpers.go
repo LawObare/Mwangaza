@@ -72,10 +72,13 @@ func statusFromSeverity(severity string) string {
 }
 
 func statusFromSatellite(data models.SatelliteData) string {
+	// Zero soil moisture / NDVI means the provider did not report the metric
+	// (OpenWeatherMap has no soil or vegetation data), so it cannot make a
+	// farm look unhealthy on its own.
 	switch {
-	case data.SoilMoisture < 15 || data.RainProbability >= 85 || data.Temperature >= 35 || data.NDVI < 0.25:
+	case (data.SoilMoisture > 0 && data.SoilMoisture < 15) || data.RainProbability >= 85 || data.Temperature >= 35 || (data.NDVI > 0 && data.NDVI < 0.25):
 		return "urgent"
-	case data.SoilMoisture < 25 || data.RainProbability >= 70 || data.Temperature >= 32 || data.NDVI < 0.35:
+	case (data.SoilMoisture > 0 && data.SoilMoisture < 25) || data.RainProbability >= 70 || data.Temperature >= 32 || (data.NDVI > 0 && data.NDVI < 0.35):
 		return "needs_attention"
 	default:
 		return "healthy"

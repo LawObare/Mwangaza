@@ -7,7 +7,9 @@ import (
 )
 
 func droughtStressRule(farm models.Farm, data models.SatelliteData, createdAt string) *models.Recommendation {
-	if data.NDVI >= 0.35 || data.SoilMoisture >= 20 {
+	// Both signals must be reported and both must indicate stress; a zero
+	// value means "not available" (OpenWeatherMap reports neither).
+	if data.SoilMoisture <= 0 || data.NDVI <= 0 || data.NDVI >= 0.35 || data.SoilMoisture >= 20 {
 		return nil
 	}
 	recommendation := recommendationFor(farm, createdAt, "drought_stress",
@@ -17,7 +19,9 @@ func droughtStressRule(farm models.Farm, data models.SatelliteData, createdAt st
 }
 
 func heatStressRule(farm models.Farm, data models.SatelliteData, createdAt string) *models.Recommendation {
-	if data.Temperature <= 34 || data.SoilMoisture >= 20 {
+	// Dry soil is part of the evidence; when it was not reported (zero means
+	// "not available"), the temperature rule still covers heat on its own.
+	if data.Temperature <= 34 || data.SoilMoisture <= 0 || data.SoilMoisture >= 20 {
 		return nil
 	}
 	recommendation := recommendationFor(farm, createdAt, "heat_stress",

@@ -18,11 +18,11 @@ import (
 var httpClient = http.DefaultClient
 
 func FetchForFarm(ctx context.Context, cfg config.Config, farm models.Farm, accessToken string) (models.SatelliteData, error) {
-	if cfg.UseMockData || strings.TrimSpace(cfg.KijaniDataURL) == "" {
+	if cfg.UseMockData || strings.TrimSpace(cfg.WeatherDataURL) == "" {
 		return MockForFarm(farm), nil
 	}
 
-	endpoint, err := buildEndpoint(cfg.KijaniDataURL, farm)
+	endpoint, err := buildEndpoint(cfg.WeatherDataURL, farm, cfg.WeatherAPIKey)
 	if err != nil {
 		return MockForFarm(farm), nil
 	}
@@ -32,10 +32,16 @@ func FetchForFarm(ctx context.Context, cfg config.Config, farm models.Farm, acce
 		return MockForFarm(farm), nil
 	}
 
-	if accessToken != "" {
-		req.Header.Set("Authorization", "Bearer "+accessToken)
-	} else if cfg.KijaniAPIKey != "" {
-		req.Header.Set("X-API-Key", cfg.KijaniAPIKey)
+	// OpenWeatherMap authenticates with the `appid` query parameter added by
+	// buildEndpoint, so it must never receive auth headers — the caller's JWT
+	// in particular stays inside Mwangaza. Legacy providers (Kijani) accept
+	// the caller's bearer token or the server-side API key header.
+	if !isOpenWeatherEndpoint(endpoint) {
+		if accessToken != "" {
+			req.Header.Set("Authorization", "Bearer "+accessToken)
+		} else if cfg.WeatherAPIKey != "" {
+			req.Header.Set("X-API-Key", cfg.WeatherAPIKey)
+		}
 	}
 
 	resp, err := httpClient.Do(req)
@@ -59,7 +65,7 @@ func FetchForFarm(ctx context.Context, cfg config.Config, farm models.Farm, acce
 		data.Timestamp = time.Now().UTC().Format(time.RFC3339)
 	}
 	if data.Source == "" {
-		data.Source = "kijani"
+		data.Source = sourceLabel(endpoint)
 	}
 
 	return data, nil
@@ -83,6 +89,16 @@ func ParseResponse(raw any) models.SatelliteData {
 	if root, ok := raw.(map[string]any); ok {
 		if _, ok := root["forecast_data"].(map[string]any); ok {
 			return parseKijaniAgroClimate(root)
+		}
+		// OpenWeatherMap 2.5 forecast: { "cod": ..., "list": [ ... ] }.
+		if _, ok := root["list"].([]any); ok {
+			return parseOpenWeatherForecast(root)
+		}
+		// OpenWeatherMap current weather: { "main": { "temp": ... }, ... }.
+		if main, ok := root["main"].(map[string]any); ok {
+			if _, ok := main["temp"]; ok {
+				return parseOpenWeatherCurrent(root)
+			}
 		}
 	}
 
@@ -239,18 +255,111 @@ func MockForFarm(farm models.Farm) models.SatelliteData {
 	return data
 }
 
-func buildEndpoint(base string, farm models.Farm) (string, error) {
+// parseOpenWeatherForecast converts OpenWeatherMap's free 2.5 forecast — a
+// 3-hourly, five-day list — into the single risk snapshot the recommendation
+// engine expects. We aggregate the first 24 forecast hours: maximum
+// temperature (Celsius via units=metric), maximum rain probability (the 0-1
+// `pop` field scaled to percent), and maximum wind speed converted from m/s
+// to the km/h the wind rule is calibrated for. OpenWeatherMap reports
+// neither soil moisture nor NDVI, so those stay zero and are treated as
+// "not available" by the recommendation rules.
+func parseOpenWeatherForecast(root map[string]any) models.SatelliteData {
+	list, _ := root["list"].([]any)
+	data := models.SatelliteData{Source: "openweathermap"}
+
+	var (
+		start     time.Time
+		haveStart bool
+	)
+	for _, entry := range list {
+		item, ok := entry.(map[string]any)
+		if !ok {
+			continue
+		}
+		dt := time.Unix(int64(floatValue(item, "dt")), 0).UTC()
+		if !haveStart {
+			start, haveStart = dt, true
+			data.Timestamp = dt.Format(time.RFC3339)
+		} else if dt.After(start.Add(24 * time.Hour)) {
+			break
+		}
+		if main, ok := item["main"].(map[string]any); ok {
+			if temperature := floatValue(main, "temp"); temperature > data.Temperature {
+				data.Temperature = temperature
+			}
+		}
+		if wind, ok := item["wind"].(map[string]any); ok {
+			if speed := floatValue(wind, "speed") * 3.6; speed > data.WindSpeed {
+				data.WindSpeed = speed
+			}
+		}
+		if probability := floatValue(item, "pop") * 100; probability > data.RainProbability {
+			data.RainProbability = probability
+		}
+	}
+	return data
+}
+
+// parseOpenWeatherCurrent maps OpenWeatherMap's 2.5 current-weather endpoint
+// onto the same snapshot. That payload carries no rain probability, soil
+// moisture, or NDVI, so those remain zero ("not available").
+func parseOpenWeatherCurrent(root map[string]any) models.SatelliteData {
+	data := models.SatelliteData{Source: "openweathermap"}
+	if main, ok := root["main"].(map[string]any); ok {
+		data.Temperature = floatValue(main, "temp")
+	}
+	if wind, ok := root["wind"].(map[string]any); ok {
+		data.WindSpeed = floatValue(wind, "speed") * 3.6
+	}
+	if dt := floatValue(root, "dt"); dt > 0 {
+		data.Timestamp = time.Unix(int64(dt), 0).UTC().Format(time.RFC3339)
+	}
+	return data
+}
+
+// isOpenWeatherEndpoint reports whether the configured endpoint belongs to
+// OpenWeatherMap, which authenticates with `appid` in the query string.
+func isOpenWeatherEndpoint(endpoint string) bool {
+	parsed, err := url.Parse(endpoint)
+	if err != nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(parsed.Host), "openweathermap.org")
+}
+
+// sourceLabel names the provider for snapshots that do not carry their own.
+func sourceLabel(endpoint string) string {
+	if isOpenWeatherEndpoint(endpoint) {
+		return "openweathermap"
+	}
+	return "kijani"
+}
+
+func buildEndpoint(base string, farm models.Farm, apiKey string) (string, error) {
 	parsed, err := url.Parse(base)
 	if err != nil {
 		return "", err
 	}
 
 	query := parsed.Query()
-	// Kijani's published agro-climate endpoint requires WGS84 `lat` and
-	// `lon`. Farm ID and crop remain local Mwangaza metadata; they are not
-	// query parameters in Kijani's API contract.
+	// Both Kijani's agro-climate endpoint and OpenWeatherMap take WGS84
+	// `lat` and `lon`. Farm ID and crop remain local Mwangaza metadata; they
+	// are not query parameters in either API contract.
 	query.Set("lat", fmt.Sprintf("%.6f", farm.Latitude))
 	query.Set("lon", fmt.Sprintf("%.6f", farm.Longitude))
+
+	if isOpenWeatherEndpoint(base) {
+		// OpenWeatherMap answers in Kelvin unless units=metric — otherwise
+		// ~300 degree readings would trip every heat rule.
+		if query.Get("units") == "" {
+			query.Set("units", "metric")
+		}
+		// The API key travels as `appid`, never as an Authorization header.
+		if apiKey != "" && query.Get("appid") == "" {
+			query.Set("appid", apiKey)
+		}
+	}
+
 	parsed.RawQuery = query.Encode()
 	return parsed.String(), nil
 }

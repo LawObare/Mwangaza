@@ -15,7 +15,9 @@ import (
 )
 
 func ndviRule(farm models.Farm, data models.SatelliteData, createdAt string) *models.Recommendation {
-	if data.NDVI >= 0.35 {
+	// NDVI 0 means the provider did not report vegetation health
+	// (OpenWeatherMap), so no vegetation advisory is generated.
+	if data.NDVI <= 0 || data.NDVI >= 0.35 {
 		return nil
 	}
 	recommendation := recommendationFor(farm, createdAt, "ndvi",

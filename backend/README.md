@@ -19,24 +19,37 @@ Hackathon-friendly Go REST API for the farm advisory demo.
 - `PORT` - HTTP server port, default `8080`
 - `DATABASE_PATH` - path to the local demo store file, default `./data/lakenet.db`
 - `USE_MOCK_DATA` - `true` for offline demo mode, default `true`
-- `SPACEIOTBOX_API_KEY` - optional live satellite API key
-- `SPACEIOTBOX_BASE_URL` - optional live satellite API base URL
+- `WEATHER_DATA_URL` - weather endpoint used for live farm data (OpenWeatherMap or Kijani)
+- `WEATHER_API_KEY` - provider API key, sent as `appid` to OpenWeatherMap (legacy aliases: `KIJANI_DATA_URL`, `KIJANI_API_KEY`)
+- `JWT_SECRET` - secret used to sign JWTs issued locally
+- `DEFAULT_LANGUAGE` - default SMS language, default `English`
 - `SMS_API_KEY` - optional Africa's Talking API key
-- `SMS_USERNAME` - optional Africa's Talking username
+- `SMS_USERNAME` - Africa's Talking username, default `sandbox`
 - `SMS_SENDER_ID` - optional sender ID
 - `AUTO_ALERTS_ENABLED` - `true` to automatically check farms and send alerts, default `false`
 - `AUTO_ALERTS_INTERVAL` - how often auto alerts run, default `15m`
 - `AUTO_ALERTS_SMS_COOLDOWN` - minimum time before another automatic SMS to the same farm, default `6h`
 
+Values exported in your shell override the `.env` file, so
+`PORT=9090 go run ./cmd` works as expected.
+
 ## Live Auto Alerts
 
 When `AUTO_ALERTS_ENABLED=true`, the backend starts a background runner. On each
-interval it fetches SpaceIoTBox data for every farm, stores the generated
+interval it fetches live weather data for every farm, stores the generated
 recommendation batch, and sends the highest-priority medium/high alert to the
 farmer by SMS. Low-priority monitoring recommendations are stored but not sent,
 so farmers are not texted repeatedly when conditions are normal.
 
 ## Key Endpoints
+
+Auth (local accounts, stored in the demo store):
+
+- `POST /api/auth/register` — create an account, returns `{token, user}`
+- `POST /api/auth/login` — exchange credentials for a JWT
+- `GET /api/auth/me` — current account (requires `Authorization: Bearer <token>`)
+
+Resources:
 
 - `GET /api/health`
 - `GET /api/farms`
@@ -47,3 +60,6 @@ so farmers are not texted repeatedly when conditions are normal.
 - `POST /api/recommendation`
 - `GET /api/sms`
 - `POST /api/sms/send`
+
+Resource routes stay open without a token so the offline demo works; when a
+valid Bearer token is supplied it is attached to the request context.

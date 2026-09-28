@@ -16,7 +16,9 @@ import (
 )
 
 func irrigationRule(farm models.Farm, data models.SatelliteData, createdAt string) *models.Recommendation {
-	if data.SoilMoisture >= 20 {
+	// Soil moisture 0 means the provider did not report it (OpenWeatherMap),
+	// not that the field is bone dry, so no irrigation advice is generated.
+	if data.SoilMoisture <= 0 || data.SoilMoisture >= 20 {
 		return nil
 	}
 	recommendation := recommendationFor(farm, createdAt, "irrigation",

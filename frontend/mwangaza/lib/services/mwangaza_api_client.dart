@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:mwangaza/constants/backend_uri.dart';
 import 'package:mwangaza/services/sp_service.dart';
 
-/// Client for Mwangaza's API. Kijani remains the authentication provider; its
-/// token is attached so the backend can retrieve the user's farm data.
+/// Client for Mwangaza's API. The Mwangaza JWT returned by `/api/auth` is
+/// attached so the backend can associate requests with the signed-in user.
 class MwangazaApiClient {
   MwangazaApiClient({Dio? dio, SpService? spService})
       : _spService = spService ?? SpService(),

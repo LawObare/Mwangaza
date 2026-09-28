@@ -13,9 +13,10 @@ func GenerateForFarm(store *database.Store, cfg config.Config, farm models.Farm)
 	return GenerateForFarmWithToken(store, cfg, farm, "")
 }
 
-// GenerateForFarmWithToken uses the logged-in Kijani user's token when it
-// refreshes environmental data. Background jobs call GenerateForFarm instead
-// and rely on the configured server API key.
+// GenerateForFarmWithToken uses the logged-in user's token when it refreshes
+// environmental data (it is only forwarded to providers that accept bearer
+// auth, never to OpenWeatherMap). Background jobs call GenerateForFarm
+// instead and rely on the configured server API key.
 func GenerateForFarmWithToken(store *database.Store, cfg config.Config, farm models.Farm, accessToken string) ([]models.Recommendation, models.SatelliteData, error) {
 	data, err := satellite.FetchAndStore(store, cfg, farm, accessToken)
 	if err != nil {

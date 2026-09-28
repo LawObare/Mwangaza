@@ -43,6 +43,17 @@ func TestGenerateRecommendationsRules(t *testing.T) {
 	}
 }
 
+func TestGenerateRecommendationsSkipsUnavailableMetrics(t *testing.T) {
+	// Zero soil moisture / NDVI means "not reported" (OpenWeatherMap), so
+	// only the monitoring result should be produced.
+	farm := models.Farm{ID: 5, Crop: "Maize", PreferredLanguage: "English"}
+	data := models.SatelliteData{Temperature: 25, RainProbability: 10, WindSpeed: 5}
+	recommendations := GenerateRecommendations(farm, data)
+	if len(recommendations) != 1 || recommendations[0].Type != "monitoring" {
+		t.Fatalf("recommendations = %#v, want a single monitoring result", recommendations)
+	}
+}
+
 func TestGenerateRecommendationsMultipleAndDeterministic(t *testing.T) {
 	farm := models.Farm{ID: 2, Crop: "Tomatoes", PreferredLanguage: "English"}
 	data := models.SatelliteData{SoilMoisture: 19, Temperature: 35, RainProbability: 80, NDVI: 0.34, WindSpeed: 31}

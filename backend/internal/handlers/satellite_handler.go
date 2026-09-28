@@ -58,8 +58,9 @@ func (h *SatelliteHandler) Get(w http.ResponseWriter, r *http.Request) {
 	utils.Success(w, satellite.MockForFarm(models.Farm{Crop: "Maize"}))
 }
 
-// bearerToken returns the Kijani token supplied by the authenticated Flutter
-// client. The token is forwarded only to Kijani; it is never stored locally.
+// bearerToken returns the token supplied by the authenticated Flutter client.
+// It is forwarded only to providers that accept bearer auth (Kijani) and is
+// never stored locally; OpenWeatherMap requests never carry it.
 func bearerToken(r *http.Request) string {
 	const prefix = "Bearer "
 	value := strings.TrimSpace(r.Header.Get("Authorization"))

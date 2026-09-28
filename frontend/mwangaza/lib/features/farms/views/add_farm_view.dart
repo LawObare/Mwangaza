@@ -184,7 +184,7 @@ class _AddFarmViewState extends State<AddFarmView> {
                   _field(_county, 'County', validator: (value) => _required(value, 'County')),
                   _field(_subCounty, 'Sub-county (optional)'),
                   DropdownButtonFormField<String>(
-                    value: _crop,
+                    initialValue: _crop,
                     decoration: const InputDecoration(labelText: 'Crop'),
                     items: const ['Maize', 'Rice', 'Beans', 'Tea', 'Sugarcane', 'Cassava']
                         .map((crop) => DropdownMenuItem(value: crop, child: Text(crop)))
@@ -200,10 +200,10 @@ class _AddFarmViewState extends State<AddFarmView> {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text('Kijani live agro-climate coverage: latitude -5.1 to 2.5, longitude 28.95 to 36.7.', style: Theme.of(context).textTheme.bodySmall),
+                  Text('OpenWeatherMap live coverage: weather data is available for any farm location worldwide.', style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: _language,
+                    initialValue: _language,
                     decoration: const InputDecoration(labelText: 'Preferred SMS language'),
                     items: const ['English', 'Swahili']
                         .map((language) => DropdownMenuItem(value: language, child: Text(language)))
