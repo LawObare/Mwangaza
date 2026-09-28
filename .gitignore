@@ -16,3 +16,6 @@
 #   .idea/                  — JetBrains IDE settings
 #   *.swp, *.swo            — Vim swap files
 #   .DS_Store               — macOS metadata
+
+# Secrets — local config files that must never be committed:
+backend/.env
