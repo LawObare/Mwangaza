@@ -18,10 +18,10 @@ func NewHealthHandler(cfg config.Config) *HealthHandler {
 
 func (h *HealthHandler) Get(w http.ResponseWriter, r *http.Request) {
 	utils.Success(w, map[string]any{
-		"status":            "ok",
-		"service":           "mwangaza",
-		"mock_mode":         h.Config.UseMockData,
-		"default_language":  h.Config.DefaultLanguage,
-		"timestamp":         time.Now().UTC().Format(time.RFC3339),
+		"status":           "ok",
+		"service":          "mwangaza",
+		"mock_mode":        h.Config.UseMockData,
+		"default_language": h.Config.DefaultLanguage,
+		"timestamp":        time.Now().UTC().Format(time.RFC3339),
 	})
 }
