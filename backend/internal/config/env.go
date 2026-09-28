@@ -42,9 +42,18 @@ func loadDotEnvFile(path string) error {
 		value := strings.TrimSpace(parts[1])
 		value = strings.Trim(value, `"'`)
 
-		if key != "" {
-			_ = os.Setenv(key, value)
+		if key == "" {
+			continue
 		}
+
+		// Values already present in the process environment win over the
+		// checked-in .env defaults, so `PORT=9090 go run cmd/main.go` (or a
+		// container/CI variable) is not silently ignored.
+		if _, exists := os.LookupEnv(key); exists {
+			continue
+		}
+
+		_ = os.Setenv(key, value)
 	}
 
 	return scanner.Err()

@@ -8,11 +8,16 @@ All endpoints return JSON with shape: `{ "success": bool, "data": ..., "error": 
 
 | Method | Path              | Description              |
 |--------|-------------------|--------------------------|
+| POST   | /api/auth/register | Create an account; returns `{token, user}` |
+| POST   | /api/auth/login    | Exchange credentials for a JWT |
+| GET    | /api/auth/me       | Current account (requires Bearer token) |
 | GET    | /api/health       | Health check             |
 | GET    | /api/farms        | List all farms           |
-| GET    | /api/farms/:id    | Get single farm          |
+| POST   | /api/farms        | Register a farm and fetch its first satellite snapshot |
+| GET    | /api/farms/{id}   | Get single farm          |
 | GET    | /api/satellite    | Get satellite data       |
 | GET    | /api/recommendation | Get recommendations    |
+| POST   | /api/recommendation | Generate recommendations for a farm |
 | GET    | /api/sms          | Get SMS history          |
 | POST   | /api/sms/send     | Send an SMS              |
 

@@ -3,8 +3,8 @@ package auth
 import (
 	"errors"
 
-	"mwangaza/internal/models"
 	"golang.org/x/crypto/bcrypt"
+	"mwangaza/internal/models"
 )
 
 var (

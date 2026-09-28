@@ -13,6 +13,31 @@ import (
 	"mwangaza/internal/models"
 )
 
+// ErrUserExists is returned when a registration reuses an existing email.
+var ErrUserExists = errors.New("user already exists")
+
+// userRecord is the persisted form of an account. models.User hides the
+// password hash from JSON output, so the store keeps its own representation.
+type userRecord struct {
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Phone        string `json:"phone"`
+	PasswordHash string `json:"password_hash"`
+	CreatedAt    string `json:"created_at"`
+}
+
+func (u userRecord) user() models.User {
+	return models.User{
+		ID:        u.ID,
+		Name:      u.Name,
+		Email:     u.Email,
+		Phone:     u.Phone,
+		Password:  u.PasswordHash,
+		CreatedAt: u.CreatedAt,
+	}
+}
+
 type Store struct {
 	mu                   sync.RWMutex
 	path                 string
@@ -20,10 +45,12 @@ type Store struct {
 	SatelliteData        []models.SatelliteData  `json:"satellite_data"`
 	Recommendations      []models.Recommendation `json:"recommendations"`
 	SMSLogs              []models.SmsMessage     `json:"sms_logs"`
+	Users                []userRecord            `json:"users"`
 	nextFarmID           int
 	nextSatelliteID      int
 	nextRecommendationID int
 	nextSMSID            int
+	nextUserID           int
 }
 
 type dump struct {
@@ -31,6 +58,7 @@ type dump struct {
 	SatelliteData   []models.SatelliteData  `json:"satellite_data"`
 	Recommendations []models.Recommendation `json:"recommendations"`
 	SMSLogs         []models.SmsMessage     `json:"sms_logs"`
+	Users           []userRecord            `json:"users"`
 }
 
 func Open(path string) (*Store, error) {
@@ -74,6 +102,7 @@ func (s *Store) load() error {
 	s.SatelliteData = d.SatelliteData
 	s.Recommendations = d.Recommendations
 	s.SMSLogs = d.SMSLogs
+	s.Users = d.Users
 	s.recomputeNextIDsLocked()
 	return nil
 }
@@ -83,6 +112,7 @@ func (s *Store) recomputeNextIDsLocked() {
 	s.nextSatelliteID = nextIDFromSatelliteData(s.SatelliteData)
 	s.nextRecommendationID = nextIDFromRecommendations(s.Recommendations)
 	s.nextSMSID = nextIDFromSMSLogs(s.SMSLogs)
+	s.nextUserID = nextID(s.Users, func(item userRecord) int { return item.ID })
 }
 
 func (s *Store) persistLocked() error {
@@ -95,6 +125,7 @@ func (s *Store) persistLocked() error {
 		SatelliteData:   s.SatelliteData,
 		Recommendations: s.Recommendations,
 		SMSLogs:         s.SMSLogs,
+		Users:           s.Users,
 	}
 
 	data, err := json.MarshalIndent(payload, "", "  ")
@@ -392,4 +423,64 @@ func (s *Store) AddSMSLog(log models.SmsMessage) (models.SmsMessage, error) {
 		return models.SmsMessage{}, err
 	}
 	return log, nil
+}
+
+// CreateUser stores a new account. The returned user carries the password hash
+// in Password so callers can verify credentials; the field is never serialised.
+func (s *Store) CreateUser(name, email, phone, passwordHash string) (models.User, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	normalized := normalizeEmail(email)
+	for _, existing := range s.Users {
+		if normalizeEmail(existing.Email) == normalized {
+			return models.User{}, ErrUserExists
+		}
+	}
+
+	record := userRecord{
+		ID:           s.nextUserID,
+		Name:         strings.TrimSpace(name),
+		Email:        strings.TrimSpace(email),
+		Phone:        strings.TrimSpace(phone),
+		PasswordHash: passwordHash,
+		CreatedAt:    time.Now().UTC().Format(time.RFC3339),
+	}
+
+	s.Users = append(s.Users, record)
+	s.nextUserID++
+	if err := s.persistLocked(); err != nil {
+		return models.User{}, err
+	}
+	return record.user(), nil
+}
+
+// GetUserByEmail looks up an account, comparing emails case-insensitively.
+func (s *Store) GetUserByEmail(email string) (models.User, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	normalized := normalizeEmail(email)
+	for _, record := range s.Users {
+		if normalizeEmail(record.Email) == normalized {
+			return record.user(), true
+		}
+	}
+	return models.User{}, false
+}
+
+func (s *Store) GetUserByID(id int) (models.User, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, record := range s.Users {
+		if record.ID == id {
+			return record.user(), true
+		}
+	}
+	return models.User{}, false
+}
+
+func normalizeEmail(email string) string {
+	return strings.ToLower(strings.TrimSpace(email))
 }

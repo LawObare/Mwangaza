@@ -15,6 +15,7 @@ type Config struct {
 	// environmental data. Its resource path is supplied by the Kijani contract.
 	KijaniDataURL         string
 	KijaniAPIKey          string
+	JWTSecret             string
 	SMSAPIKey             string
 	SMSUsername           string
 	SMSSenderID           string
@@ -23,6 +24,10 @@ type Config struct {
 	AutoAlertsInterval    time.Duration
 	AutoAlertsSMSCooldown time.Duration
 }
+
+// DevJWTSecret is used when JWT_SECRET is unset so local demos work out of the
+// box. Always set JWT_SECRET outside of local development.
+const DevJWTSecret = "dev-secret-change-in-production"
 
 func Load() Config {
 	_ = loadDotEnvFiles(".env", "backend/.env")
@@ -33,6 +38,7 @@ func Load() Config {
 		UseMockData:           parseBool(getEnv("USE_MOCK_DATA", "true")),
 		KijaniDataURL:         getEnv("KIJANI_DATA_URL", ""),
 		KijaniAPIKey:          getEnv("KIJANI_API_KEY", ""),
+		JWTSecret:             getEnv("JWT_SECRET", DevJWTSecret),
 		SMSAPIKey:             getEnv("SMS_API_KEY", ""),
 		SMSUsername:           getEnv("SMS_USERNAME", "sandbox"),
 		SMSSenderID:           getEnv("SMS_SENDER_ID", ""),
